@@ -35,6 +35,7 @@ model Invite {
   firstName    String?
   lastName     String?
   status       InviteStatus @default(PENDING) // PENDING, ACCEPTED, EXPIRED
+  token        String    @unique // Token สำหรับยืนยันตัวตน
   link         String    // ลิงค์ที่ส่งไปใน email
   invitedById  Int
   invitedBy    User      @relation("UserInvites", fields: [invitedById], references: [id])
