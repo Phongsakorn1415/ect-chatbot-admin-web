@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/database";
-import React from 'react'
 
 export async function POST( req : Request ) {
   try{
