@@ -1,7 +1,7 @@
 import NextAuth from "next-auth"
 import CredentialsProvider from "next-auth/providers/credentials"
 
-export default NextAuth({
+const authOptions = NextAuth({
     providers: [
         CredentialsProvider({
             name: "Credentials",
@@ -9,7 +9,7 @@ export default NextAuth({
                 email: { label: "Email", type: "text" },
                 password: { label: "Password", type: "password" }
             },
-            async authorize(credentials) {
+            async authorize(credentials, req) {
                 try {
                     // เรียก API login ของคุณ (API ตอบเป็น { message, user })
                     const res = await fetch("http://localhost:3000/api/login", {
@@ -49,6 +49,7 @@ export default NextAuth({
     session: {
         strategy: "jwt"
     },
+    secret: process.env.NEXTAUTH_SECRET,
     callbacks: {
         async jwt({ token, user }) {
             // เก็บ role ลงใน token ตอน login
@@ -73,3 +74,6 @@ export default NextAuth({
         signIn: "/" // หน้า login
     }
 })
+
+const handler = NextAuth(authOptions);
+export { handler as GET, handler as POST };
