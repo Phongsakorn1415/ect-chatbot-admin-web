@@ -1,7 +1,8 @@
 import NextAuth from "next-auth"
 import CredentialsProvider from "next-auth/providers/credentials"
+import type { NextAuthOptions } from "next-auth"
 
-const authOptions = NextAuth({
+export const authOptions: NextAuthOptions = {
     providers: [
         CredentialsProvider({
             name: "Credentials",
@@ -51,21 +52,29 @@ const authOptions = NextAuth({
     },
     secret: process.env.NEXTAUTH_SECRET,
     callbacks: {
+        // Store custom fields from `user` into the JWT at sign-in
         async jwt({ token, user }) {
-            // เก็บ role ลงใน token ตอน login
             if (user) {
-                token.id = user.id
-                token.role = user.role
-                token.name = `${user.title} ${user.firstName} ${user.lastName}`
+                // user comes from authorize() return value
+                const u: any = user
+                token.id = u.id
+                token.title = u.title
+                token.firstName = u.firstName
+                token.lastName = u.lastName
+                token.role = u.role
             }
             return token
         },
+        // Make those custom fields available on the client session
         async session({ session, token }) {
-            // ส่ง role ไปที่ client
             if (token) {
-                session.user.id = token.id as string
-                session.user.role = token.role as string
-                session.user.name = token.name as string
+                const t: any = token;
+                // session.user is typed by next-auth; cast to any to attach custom props
+                (session.user as any).id = t.id as string;
+                (session.user as any).title = t.title as string;
+                (session.user as any).firstName = t.firstName as string;
+                (session.user as any).lastName = t.lastName as string;
+                (session.user as any).role = t.role as string;
             }
             return session
         }
@@ -73,7 +82,7 @@ const authOptions = NextAuth({
     pages: {
         signIn: "/" // หน้า login
     }
-})
+}
 
 const handler = NextAuth(authOptions);
 export { handler as GET, handler as POST };

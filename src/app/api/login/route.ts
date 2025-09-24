@@ -27,6 +27,7 @@ export async function POST(req: Request) {
             message: "Login successful", user: {
                 id: user.id,
                 email: user.email,
+                title: user.title,
                 firstname: user.firstName,
                 lastname: user.lastName,
                 role: user.role

@@ -15,6 +15,7 @@ const LoginModal: React.FC<LoginModalProps> = ({ open, onClose }) => {
     const [password, setPassword] = useState("");
     const [error, setError] = useState("");
     const [loading, setLoading] = useState(false);
+
     const router = useRouter();
 
     const handleLogin = async (e: FormEvent<HTMLFormElement>) => {
@@ -29,13 +30,13 @@ const LoginModal: React.FC<LoginModalProps> = ({ open, onClose }) => {
             });
 
             // signIn may return undefined in some cases; prefer checking ok and error
-            if (res && (res as any).ok) {
-                // navigate to dashboard after successful login
-                router.push("/dashboard");
-                onClose();
-            } else {
+            if (res?.error) {
                 setError("ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง");
+                return;
             }
+
+            router.push("/admin");
+            onClose();
         } catch (err) {
             setError("เกิดข้อผิดพลาด โปรดลองอีกครั้ง");
             // optionally log the error to console for debugging
@@ -48,7 +49,13 @@ const LoginModal: React.FC<LoginModalProps> = ({ open, onClose }) => {
     return (
         <Modal
             open={open}
-            onClose={onClose}
+            onClose={() => {
+                setEmail("");
+                setPassword("");
+                setError("");
+                setLoading(false);
+                onClose();
+            }}
             aria-labelledby="login-modal"
             aria-describedby="login-modal-description"
         >
