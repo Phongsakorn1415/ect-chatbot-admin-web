@@ -1,6 +1,9 @@
-import React from "react";
-import { Modal, Box, TextField, Button, Typography, Link } from "@mui/material";
-import { Label } from "@mui/icons-material";
+"use client";
+
+import { useState, FormEvent } from "react";
+import { Modal, Box, TextField, Button, Typography, Link, CircularProgress } from "@mui/material";
+import { signIn } from "next-auth/react";
+import { useRouter } from "next/navigation";
 
 interface LoginModalProps {
     open: boolean;
@@ -8,10 +11,51 @@ interface LoginModalProps {
 }
 
 const LoginModal: React.FC<LoginModalProps> = ({ open, onClose }) => {
+    const [email, setEmail] = useState("");
+    const [password, setPassword] = useState("");
+    const [error, setError] = useState("");
+    const [loading, setLoading] = useState(false);
+
+    const router = useRouter();
+
+    const handleLogin = async (e: FormEvent<HTMLFormElement>) => {
+        e.preventDefault();
+        setError("");
+        setLoading(true);
+        try {
+            const res = await signIn("credentials", {
+                redirect: false,
+                email,
+                password,
+            });
+
+            // signIn may return undefined in some cases; prefer checking ok and error
+            if (res?.error) {
+                setError("ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง");
+                return;
+            }
+
+            router.push("/admin");
+            onClose();
+        } catch (err) {
+            setError("เกิดข้อผิดพลาด โปรดลองอีกครั้ง");
+            // optionally log the error to console for debugging
+            // console.error(err);
+        } finally {
+            setLoading(false);
+        }
+    };
+
     return (
         <Modal
             open={open}
-            onClose={onClose}
+            onClose={() => {
+                setEmail("");
+                setPassword("");
+                setError("");
+                setLoading(false);
+                onClose();
+            }}
             aria-labelledby="login-modal"
             aria-describedby="login-modal-description"
         >
@@ -37,14 +81,23 @@ const LoginModal: React.FC<LoginModalProps> = ({ open, onClose }) => {
                 <Box
                     component="form"
                     sx={{ display: "flex", flexDirection: "column", gap: 2, my: 1 }}
+                    onSubmit={handleLogin}
                 >
                     <Box>
                         <Typography variant="body1" component="p">
                             ชื่อผู้ใช้ :
                         </Typography>
                         <TextField
+                            id="login-email"
+                            name="email"
+                            type="email"
                             variant="outlined"
+                            value={email}
+                            onChange={(e) => setEmail(e.target.value)}
                             fullWidth
+                            required
+                            autoComplete="username"
+                            inputProps={{ 'aria-label': 'email' }}
                         />
                     </Box>
                     <Box>
@@ -52,15 +105,35 @@ const LoginModal: React.FC<LoginModalProps> = ({ open, onClose }) => {
                             รหัสผ่าน :
                         </Typography>
                         <TextField
+                            id="login-password"
+                            name="password"
                             type="password"
                             variant="outlined"
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
                             fullWidth
+                            required
+                            autoComplete="current-password"
+                            inputProps={{ 'aria-label': 'password' }}
                         />
                     </Box>
+                    {error && (
+                        <Typography variant="body2" color="error" component="p">
+                            {error}
+                        </Typography>
+                    )}
+                    <Button
+                        type="submit"
+                        variant="contained"
+                        color="primary"
+                        fullWidth
+                        sx={{ mt: 2 }}
+                        disabled={loading}
+                    >
+                        {loading ? <CircularProgress size={20} color="inherit" /> : "เข้าสู่ระบบ"}
+                    </Button>
                 </Box>
-                <Button variant="contained" color="primary" fullWidth sx={{ mt: 2 }}>
-                    เข้าสู่ระบบ
-                </Button>
+
                 <Link href="#" variant="body2" sx={{ textAlign: 'right' }}>
                     ลืมรหัสผ่าน?
                 </Link>
