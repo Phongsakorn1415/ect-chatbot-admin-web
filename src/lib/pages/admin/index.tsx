@@ -1,19 +1,27 @@
 'use client'
 
-import React from 'react'
+import React, { useEffect } from 'react'
 import { signOut } from 'next-auth/react'
 import { Button } from '@mui/material'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { IUser } from '@/lib/types/user'
 import { useContext } from 'react'
+import { stat } from 'fs'
 
 const AdminHomepage = () => {
   const router = useRouter()
-  const { data: session } = useSession()
+  const { data: session, status } = useSession()
   console.log('Admin session:', session)
 
   const user = session?.user as IUser | undefined
+
+  useEffect(() => {
+    if (!session) {
+      router.replace('/')
+    }
+  }), [session, status]
+  if (status === 'loading') return null
 
   const handleSignOut = async () => {
     // Prevent next-auth from performing its own redirect so we can control navigation

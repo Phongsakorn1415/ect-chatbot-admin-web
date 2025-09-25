@@ -1,10 +1,21 @@
 'use client'
 
-import React from 'react'
+import React, { useEffect } from 'react'
 import { Grid } from '@mui/material'
 import ChatBox from '@/lib/components/ChatBox'
+import { useSession } from 'next-auth/react'
+import { useRouter } from 'next/navigation'
 
 const HomePage = () => {
+  const router = useRouter()
+  const { data: session, status }  = useSession()
+
+  useEffect(() => {
+    if (session) router.replace('admin')
+  }), [session, status]
+
+  if (status === 'loading') return null
+
   return (
     <>
       <Grid container sx={{ alignItems: 'center', height: '80vh' }}>
