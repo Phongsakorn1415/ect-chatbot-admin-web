@@ -39,8 +39,6 @@ export default function ThemeRegistry({ children }: { children: React.ReactNode 
   return (
     <CacheProvider value={cache}>
       <ThemeProvider theme={MainTheme}>
-        {/* CssBaseline เป็นสิ่งดีที่จะใส่เพื่อรีเซ็ต CSS */}
-        {/* <CssBaseline /> */} 
         {children}
       </ThemeProvider>
     </CacheProvider>
