@@ -16,16 +16,14 @@ const AdminHomepage = () => {
 
   const user = session?.user as IUser | undefined
 
-  useEffect(() => {
-    if (!session) {
-      router.replace('/')
-    }
-  }), [session, status]
-  if (status === 'loading') return null
+  // useEffect(() => {
+  //   if (!session) {
+  //     router.replace('/')
+  //   }
+  // }), [session, status]
+  // if (status === 'loading') return null
 
   const handleSignOut = async () => {
-    // Prevent next-auth from performing its own redirect so we can control navigation
-    // and avoid a race where middleware or session checks redirect back to /admin.
     await signOut({ redirect: false })
     router.push('/')
   }

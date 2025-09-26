@@ -13,7 +13,7 @@ interface NavBarProps {
 
 const NavBar = ({ HandleDrawerToggle }: NavBarProps) => {
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
-  const { data: session } = useSession()
+  const { data: session, status } = useSession()
   const getBreakPoint = useBreakPointResolution();
 
   const handleOpenLoginModal = () => {
@@ -44,7 +44,7 @@ const NavBar = ({ HandleDrawerToggle }: NavBarProps) => {
             )}
             <Box component="span" sx={{ fontSize: 20, fontWeight: 'bold' }}>ECTChatbot</Box>
           </Box>
-          {!session && (
+          {!session && status !== 'loading' && (
             <Button
               variant="contained"
               color="secondary"
@@ -56,7 +56,7 @@ const NavBar = ({ HandleDrawerToggle }: NavBarProps) => {
           )}
         </Toolbar>
       </AppBar>
-      { !session && (
+      { status !== 'loading' && !session && (
       <LoginModal
         open={isLoginModalOpen}
         onClose={handleCloseLoginModal}

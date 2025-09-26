@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation'
 import { signOut } from 'next-auth/react'
 import AccountCircleRoundedIcon from '@mui/icons-material/AccountCircleRounded';
 import LogoutRoundedIcon from '@mui/icons-material/LogoutRounded';
+import HomeOutlinedIcon from '@mui/icons-material/HomeOutlined';
 
 interface MainDrawerProps {
   isOpen: boolean;
@@ -15,38 +16,42 @@ interface MainDrawerProps {
 
 const MainDrawer = ({ isOpen, HandleDrawerClose, handleDrawerTransitionEnd }: MainDrawerProps) => {
   const { isMobile, isTablet } = useBreakPointResolution()
-  const { data: session } = useSession()
-
-  // ถ้าไม่มี session ไม่ต้องแสดง Drawer
-  if (!session) return null
+  const { data: session, status } = useSession()
 
   const router = useRouter()
+
+  if (status === 'loading' || !session) return null
 
   const handleSignOut = async () => {
     await signOut({ redirect: false })
     router.push('/')
   }
 
+  const handleNavigate = (path: string) => {
+    router.push(path)
+    HandleDrawerClose()
+  }
+
   const DrawerContent = () => (
     <>
       <Box gap={2}>
-        <Paper elevation={0} sx={{ mb: 2, display: { xs: 'block', sm: 'flex' }, justifyContent: 'space-between', alignItems: 'center', textAlign: 'center' }}>
-          <Paper elevation={0} sx={{ padding: 0.5, width: '100%', display: { xs: 'block', sm: 'flex' }, alignItems: 'center', ':hover': { bgcolor: 'action.hover', cursor: 'pointer' } }} onClick={() => router.push('/profile')}>
+  <Paper elevation={0} sx={{ mb: 2, display: { xs: 'block', sm: 'flex' }, justifyContent: 'space-between', alignItems: 'center', textAlign: 'center' }}>
+          <Paper elevation={0} sx={{ borderRadius: 2, padding: 0.5, width: '100%', display: { xs: 'block', sm: 'flex' }, alignItems: { xs: 'center', sm: 'flex-start' }, ':hover': { bgcolor: 'action.hover', cursor: 'pointer' } }} onClick={() => handleNavigate('/admin/profile')}>
             <AccountCircleRoundedIcon sx={{ fontSize: 40, color: 'gray' }} />
             <Box sx={{ ml: { xs: 0, sm: 2 } }}>
-              <Typography variant='subtitle1' sx={{ fontWeight: 'bold' }}>{session.user?.firstName} {session.user?.lastName} </Typography>
-              <Typography variant='body2' sx={{ color: 'gray' }}> {session.user?.role} </Typography>
+              <Typography variant='subtitle1' sx={{ fontWeight: 'bold' }}>{session.user?.firstName} {session.user?.lastName}</Typography>
+              <Typography variant='body2' sx={{ color: 'gray' }}>{session.user?.role}</Typography>
             </Box>
           </Paper>
           <Button variant={isMobile ? 'outlined' : 'text'} fullWidth={isMobile} color='error' onClick={handleSignOut} sx={{ ml: 'auto', mt: { xs: 1, sm: 0 } }}>
             <LogoutRoundedIcon fontSize='medium' />  {isMobile ? <Typography variant='body2' sx={{ ml: 1 }}>ออกจากระบบ</Typography> : null}
           </Button>
         </Paper>
-        <Paper elevation={0} sx={{ ':hover': { bgcolor: 'action.hover', cursor: 'pointer' }, p: 1, borderRadius: 1 }} onClick={() => router.push('/courses')}>หลักสูตร</Paper>
+        <Paper elevation={0} sx={{ ':hover': { bgcolor: 'action.hover', cursor: 'pointer' }, p: 1, borderRadius: 2, display: 'flex', alignItems: 'center' }} onClick={() => handleNavigate('/admin')}>หน้าแรก</Paper>
+        <Paper elevation={0} sx={{ ':hover': { bgcolor: 'action.hover', cursor: 'pointer' }, p: 1, borderRadius: 2 }} onClick={() => handleNavigate('/admin/courses')}>หลักสูตร</Paper>
         {session.user?.role == 'SUPER_ADMIN' && (
-          <Paper elevation={0} sx={{ ':hover': { bgcolor: 'action.hover', cursor: 'pointer' }, p: 1, borderRadius: 1 }} onClick={() => router.push('/accounts')}>บัญชีทั้งหมด</Paper>
+          <Paper elevation={0} sx={{ ':hover': { bgcolor: 'action.hover', cursor: 'pointer' }, p: 1, borderRadius: 2 }} onClick={() => handleNavigate('/admin/accounts')}>บัญชีทั้งหมด</Paper>
         )}
-        {/* <Link href='/profile' variant='body1' sx={{ textDecoration: 'none', color: 'text.primary', width: '100%', bgcolor: 'background.default' }}>หลักสูตร</Link> */}
       </Box>
     </>
   )
