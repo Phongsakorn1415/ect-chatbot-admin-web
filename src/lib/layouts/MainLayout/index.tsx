@@ -40,14 +40,14 @@ const MainLayout = ({ children }: MainLayoutProps) => {
           <NavBar HandleDrawerToggle={handleDrawerToggle} />
           <Toolbar />
           <Grid container spacing={0} sx={{ width: '100%', margin: 0 }}>
-            <Grid size={{ xs: 0, md: 3, lg: 2 }} sx={{ display: { xs: 'none', md: 'block', lg: 'block' } }}>
+            <Grid size={{ xs: 0, md: 3.5, lg: 2.5, xl: 2 }} sx={{ display: { xs: 'none', md: 'block', lg: 'block' } }}>
               <MainDrawer
                 isOpen={mobileOpen}
                 HandleDrawerClose={handleDrawerClose}
                 handleDrawerTransitionEnd={handleDrawerTransitionEnd}
               />
             </Grid>
-            <Grid size={{ xs: 12, md: 9, lg: 10 }} sx={{ p: 1 }}>
+            <Grid size={{ xs: 12, md: 8.5, lg: 9.5, xl: 10 }} sx={{ p: 2 }}>
               {children}
             </Grid>
           </Grid>
