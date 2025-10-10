@@ -1,29 +1,34 @@
 "use client";
 
-import NavBar from "@/lib/components/NavBar";
 import React, { ReactNode } from "react";
 import AuthProvider from "@/lib/layouts/AuthProviders";
-import { ThemeProvider } from "@mui/material/styles";
+import ThemeRegistry from "@/lib/styles/ThemeRegistry";
+import NavBar from "@/lib/components/NavBar";
 import { Toolbar } from "@mui/material";
-import MainTheme from "@/lib/styles/MainStyle";
+import { usePathname } from "next/navigation";
+import type { Session } from "next-auth";
 
 interface MainLayoutProps {
   children: ReactNode;
+  session: Session | null;
 }
 
-const MainLayout = ({ children }: MainLayoutProps) => {
-  
+const MainLayout = ({ children, session }: MainLayoutProps) => {
+  const pathname = usePathname();
+  const isAdminRoute = pathname?.startsWith('/admin');
 
   return (
-    <>
-      <AuthProvider>
-        <ThemeProvider theme={MainTheme}>
-          <NavBar />
-          <Toolbar />
-          {children}
-        </ThemeProvider>
-      </AuthProvider>
-    </>
+    <AuthProvider session={session}>
+      <ThemeRegistry>
+        {!isAdminRoute && (
+          <>
+            <NavBar HandleDrawerToggle={() => { }} />
+            <Toolbar />
+          </>
+        )}
+        {children}
+      </ThemeRegistry>
+    </AuthProvider>
   );
 };
 

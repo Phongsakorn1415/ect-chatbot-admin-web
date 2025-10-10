@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, FormEvent } from "react";
-import { Modal, Box, TextField, Button, Typography, Link, CircularProgress } from "@mui/material";
+import { Modal, Box, TextField, Button, Typography, Link, CircularProgress, useMediaQuery } from "@mui/material";
+import { useTheme } from '@mui/material/styles';
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 
@@ -15,6 +16,10 @@ const LoginModal: React.FC<LoginModalProps> = ({ open, onClose }) => {
     const [password, setPassword] = useState("");
     const [error, setError] = useState("");
     const [loading, setLoading] = useState(false);
+
+    // Responsive helpers
+    const theme = useTheme();
+    const downSm = useMediaQuery(theme.breakpoints.down('sm'));
 
     const router = useRouter();
 
@@ -65,17 +70,20 @@ const LoginModal: React.FC<LoginModalProps> = ({ open, onClose }) => {
                     top: "50%",
                     left: "50%",
                     transform: "translate(-50%, -50%)",
-                    width: 400,
+                    width: { xs: '80vw', sm: 420 },
+                    maxWidth: 520,
                     bgcolor: "background.paper",
                     borderRadius: 2,
                     boxShadow: 24,
-                    p: 4,
+                    p: { xs: 3, sm: 4 },
                     display: "flex",
                     flexDirection: "column",
                     gap: 2,
+                    maxHeight: { xs: '90vh', sm: 'unset' },
+                    overflowY: { xs: 'auto', sm: 'visible' },
                 }}
             >
-                <Typography variant="h4" component="h2">
+                <Typography variant={downSm ? 'h5' : 'h4'} component="h2" sx={{ textAlign: 'center' }}>
                     เข้าสู่ระบบ
                 </Typography>
                 <Box

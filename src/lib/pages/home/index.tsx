@@ -10,11 +10,11 @@ const HomePage = () => {
   const router = useRouter()
   const { data: session, status }  = useSession()
 
-  useEffect(() => {
-    if (session) router.replace('admin')
-  }), [session, status]
+  // useEffect(() => {
+  //   if (session) router.replace('admin')
+  // }), [session, status]
 
-  if (status === 'loading') return null
+  // if (status === 'loading') return null
 
   return (
     <>

@@ -1,9 +1,16 @@
-"use client"
+"use client";
 
-import { SessionProvider } from "next-auth/react"
+import { SessionProvider } from "next-auth/react";
+import type { Session } from "next-auth";
 
-const AuthProvider = ({ children }: { children: React.ReactNode }) => {
-    return <SessionProvider>{children}</SessionProvider>
+interface AuthProviderProps {
+    children: React.ReactNode;
+    session: Session | null;
 }
 
-export default AuthProvider
+// Wrap next-auth SessionProvider and inject the server-fetched initial session
+const AuthProvider = ({ children, session }: AuthProviderProps) => {
+    return <SessionProvider session={session}>{children}</SessionProvider>;
+};
+
+export default AuthProvider;
