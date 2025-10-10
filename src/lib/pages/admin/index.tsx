@@ -2,12 +2,13 @@
 
 import React, { useEffect } from 'react'
 import { signOut } from 'next-auth/react'
-import { Button } from '@mui/material'
+import { Button, Grid } from '@mui/material'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { IUser } from '@/lib/types/user'
 import { useContext } from 'react'
 import { stat } from 'fs'
+import MenuDrawer from '@/lib/components/MenuDrawer'
 
 const AdminHomepage = () => {
   const router = useRouter()
@@ -30,12 +31,17 @@ const AdminHomepage = () => {
 
   return (
     <>
-      <h1>Admin Page</h1>
-      <p>Signed in as: {user?.title} {user?.firstName} {user?.lastName}</p>
-      <p>Role: {user?.role ?? 'unknown'}</p>
-      <Button variant="contained" color="primary" onClick={handleSignOut}>
-        Sign Out
-      </Button>
+      <Grid container spacing={2}>
+        <Grid size={{ xs: 12, lg: 9 }}>
+          <h1>Admin Page</h1>
+          <p>Signed in as: {user?.title} {user?.firstName} {user?.lastName}</p>
+          <p>Role: {user?.role ?? 'unknown'}</p>
+          <Button variant="contained" color="primary" onClick={handleSignOut}>
+            Sign Out
+          </Button>
+        </Grid>
+      </Grid>
+
     </>
   )
 }

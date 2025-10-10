@@ -66,7 +66,7 @@ const MainDrawer = ({ isOpen, HandleDrawerClose, handleDrawerTransitionEnd }: Ma
           onClose={HandleDrawerClose}
           onTransitionEnd={handleDrawerTransitionEnd}
         >
-          <Box sx={{ height: '100%', width: '50vw', paddingTop: '64px' }}>
+          <Box sx={{ height: '100%', width: { xs: '80vw', sm: '50vw' }, paddingTop: '64px' }}>
             <Box sx={{ padding: 2, overflowY: 'auto', overflowX: 'hidden' }}>
               <DrawerContent />
             </Box>
