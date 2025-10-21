@@ -2,11 +2,15 @@
   "name": "ect-chatbot-admin-web",
   "version": "0.1.0",
   "private": true,
+  "prisma": {
+    "seed": "node prisma/seed.js"
+  },
   "scripts": {
     "dev": "next dev -H 0.0.0.0 -p 3000",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "seed": "prisma db seed"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",
