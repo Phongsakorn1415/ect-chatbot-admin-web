@@ -1,0 +1,55 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           Int       @id @default(autoincrement())
+  email        String    @unique
+  title        String?
+  firstName    String?
+  lastName     String?
+  passwordHash String?
+  role         Role      @default(TEACHER)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  invites      Invite[]  @relation("UserInvites")
+}
+
+model Invite {
+  id           Int       @id @default(autoincrement())
+  email        String    // Email ที่ได้รับการ invite
+  title        String?
+  firstName    String?
+  lastName     String?
+  status       InviteStatus @default(PENDING) // PENDING, ACCEPTED, EXPIRED
+  token        String    @unique // Token สำหรับยืนยันตัวตน
+  link         String    // ลิงค์ที่ส่งไปใน email
+  invitedById  Int
+  invitedBy    User      @relation("UserInvites", fields: [invitedById], references: [id])
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+}
+
+enum Role {
+  TEACHER
+  ADMIN
+  SUPER_ADMIN
+}
+
+enum InviteStatus {
+  PENDING
+  ACCEPTED
+  EXPIRED
+}

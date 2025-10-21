@@ -14,32 +14,91 @@ datasource db {
 }
 
 model User {
-  id           Int       @id @default(autoincrement())
+  id           Int       @id @unique @default(autoincrement())
   email        String    @unique
   title        String?
   firstName    String?
   lastName     String?
   passwordHash String?
-  role         Role      @default(ADMIN)
+  role         Role      @default(TEACHER)
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
-
   invites      Invite[]  @relation("UserInvites")
+  teach        teach[]
+  contact      contact[]
 }
 
 model Invite {
-  id           Int       @id @default(autoincrement())
-  email        String    // Email ที่ได้รับการ invite
-  title        String?
-  firstName    String?
-  lastName     String?
-  status       InviteStatus @default(PENDING) // PENDING, ACCEPTED, EXPIRED
-  token        String    @unique // Token สำหรับยืนยันตัวตน
-  link         String    // ลิงค์ที่ส่งไปใน email
-  invitedById  Int
-  invitedBy    User      @relation("UserInvites", fields: [invitedById], references: [id])
+  id          Int          @id @unique @default(autoincrement())
+  email       String
+  title       String?
+  firstName   String?
+  lastName    String?
+  status      InviteStatus  @default(PENDING)
+  token       String       @unique
+  link        String
+  invitedById Int
+  invitedBy   User         @relation("UserInvites", fields: [invitedById], references: [id])
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
+}
+
+model Course_year {
+  id               Int                @id @unique @default(autoincrement())
+  year             Int                @unique
+  Tuition_fees     Tuition_fees[]
+  Education_sector Education_sector[]
+}
+
+model Tuition_fees {
+  id             Int          @id @unique @default(autoincrement())
+  normal         Int?
+  summer         Int?
+  course_year_id Course_year? @relation(fields: [course_yearId], references: [id])
+  course_yearId  Int?
+}
+
+model Education_sector {
+  id             Int          @id @unique @default(autoincrement())
+  course_year_id Course_year? @relation(fields: [course_yearId], references: [id])
+  year           Int?
+  semester       Int?
+  course_yearId  Int?
+  subject        subject[]
+}
+
+model subject {
+  id                  Int               @id @unique @default(autoincrement())
+  name                String?
+  credit              Int?
+  language            String?
+  isRequire           Boolean?
+  Education_sector_id Education_sector? @relation(fields: [education_sectorId], references: [id])
+  education_sectorId  Int?
+  teach               teach[]
+}
+
+model teach {
+  id         Int     @id @unique @default(autoincrement())
+  user_id    User    @relation(fields: [userId], references: [id])
+  subject_id subject @relation(fields: [subjectId], references: [id])
+  userId     Int
+  subjectId  Int
+}
+
+model contact_type {
+  id        Int       @id @unique @default(autoincrement())
+  type_name String
+  contact   contact[]
+}
+
+model contact {
+  id             Int          @id @unique @default(autoincrement())
+  contact_type   contact_type @relation(fields: [contact_typeId], references: [id])
+  contact_detail String
+  user           User         @relation(fields: [userId], references: [id])
+  contact_typeId Int
+  userId         Int
 }
 
 enum Role {
