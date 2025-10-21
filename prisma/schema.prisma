@@ -48,6 +48,8 @@ model Course_year {
   year             Int                @unique
   Tuition_fees     Tuition_fees[]
   Education_sector Education_sector[]
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
 }
 
 model Tuition_fees {
@@ -56,6 +58,8 @@ model Tuition_fees {
   summer         Int?
   course_year_id Course_year? @relation(fields: [course_yearId], references: [id])
   course_yearId  Int?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
 }
 
 model Education_sector {
@@ -65,6 +69,8 @@ model Education_sector {
   semester       Int?
   course_yearId  Int?
   subject        subject[]
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
 }
 
 model subject {
@@ -76,6 +82,8 @@ model subject {
   Education_sector_id Education_sector? @relation(fields: [education_sectorId], references: [id])
   education_sectorId  Int?
   teach               teach[]
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
 }
 
 model teach {
@@ -99,6 +107,8 @@ model contact {
   user           User         @relation(fields: [userId], references: [id])
   contact_typeId Int
   userId         Int
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
 }
 
 enum Role {
