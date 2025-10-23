@@ -12,4 +12,7 @@ export interface PageDrawerProps {
     isOpen: boolean;
     drawerWidth: number;
     items: DrawerMenuItem[];
+    showAddButton?: boolean;
+    addButtonText?: string;
+    onAddButtonClick?: () => void;
 }

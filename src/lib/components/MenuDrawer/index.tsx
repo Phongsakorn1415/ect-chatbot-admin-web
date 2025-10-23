@@ -6,7 +6,7 @@ import ExpandLess from '@mui/icons-material/ExpandLess';
 import ExpandMore from '@mui/icons-material/ExpandMore';
 
 // Page-scoped permanent drawer that reserves space within the page layout (not overlaying the global MainDrawer)
-const MenuDrawer: React.FC<PageDrawerProps> = ({ isOpen, drawerWidth, items }) => {
+const MenuDrawer: React.FC<PageDrawerProps> = ({ isOpen, drawerWidth, items, showAddButton = false, addButtonText, onAddButtonClick }) => {
   const width = isOpen ? drawerWidth : 0;
 
   // Track which parent items are expanded
@@ -81,12 +81,14 @@ const MenuDrawer: React.FC<PageDrawerProps> = ({ isOpen, drawerWidth, items }) =
             </React.Fragment>
           );
         })}
-        <ListItem>
-          <ListItemButton sx={{bgcolor: 'lightgray', borderRadius: '10px', '&:hover': {bgcolor: 'gray'}}}>
-            <ListItemIcon><AddIcon /></ListItemIcon>
-            <ListItemText primary="เพิ่มหลักสูตรใหม่" />
-          </ListItemButton>
-        </ListItem>
+        {showAddButton && (
+          <ListItem>
+            <ListItemButton sx={{bgcolor: 'lightgray', borderRadius: '10px', '&:hover': {bgcolor: 'gray'}}} onClick={onAddButtonClick}>
+              <ListItemIcon><AddIcon /></ListItemIcon>
+              <ListItemText primary={addButtonText} />
+            </ListItemButton>
+          </ListItem>
+        )}
       </List>
     </Drawer>
   )
