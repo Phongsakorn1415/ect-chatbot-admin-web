@@ -70,3 +70,30 @@ npx prisma migrate dev --name init
 
 - หากเกิดข้อผิดพลาดเกี่ยวกับการเชื่อมต่อ ให้ตรวจสอบค่า `DATABASE_URL` และสถานะของฐานข้อมูลอีกครั้ง
 
+## สร้างผู้ใช้แรก (Prisma Seed)
+### ตั้งค่าตัวแปรใน `.env`
+
+เพิ่มตัวแปรต่อไปนี้ (ตัวอย่าง):
+
+```
+FIRST_USER_EMAIL=admin@example.com
+FIRST_USER_PASSWORD=ChangeMe123!
+FIRST_USER_TITLE=Mr.
+FIRST_USER_FIRST_NAME=Admin
+FIRST_USER_LAST_NAME=User
+# เลือกได้: TEACHER | ADMIN | SUPER_ADMIN (ค่า default: SUPER_ADMIN)
+FIRST_USER_ROLE=SUPER_ADMIN
+```
+
+### รันสคริปต์ Seed
+
+หลังจากตั้งค่า `DATABASE_URL` และตัวแปรผู้ใช้แรกแล้ว ให้รัน:
+
+```bash
+npx prisma db seed
+# หรือ
+npm run seed
+```
+
+สคริปต์จะทำการ upsert ผู้ใช้จากอีเมล หากมีอยู่แล้วจะไม่เขียนทับข้อมูลเดิม (จะเพียงยืนยันให้มีผู้ใช้อยู่)
+
