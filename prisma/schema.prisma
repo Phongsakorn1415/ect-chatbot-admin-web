@@ -48,6 +48,7 @@ model Course_year {
   year             Int                @unique
   Tuition_fees     Tuition_fees[]
   Education_sector Education_sector[]
+  status           PublishStatus      @default(DRAFT)
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
 }
@@ -121,4 +122,9 @@ enum InviteStatus {
   PENDING
   ACCEPTED
   EXPIRED
+}
+
+enum PublishStatus {
+  DRAFT
+  PUBLISHED
 }
