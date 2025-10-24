@@ -5,7 +5,7 @@ import React from 'react'
 import ListIcon from '@mui/icons-material/List';
 import MenuOpenIcon from '@mui/icons-material/MenuOpen';
 import getBrackPointResolution from '@/lib/services/BreakPointResolusion';
-import MenuDrawer from '@/lib/components/MenuDrawer';
+import MenuDrawer from '@/lib/components/pageComponent/courses/MenuDrawer';
 import { DrawerMenuItem } from "@/lib/types/PageDrawer";
 import { CourseYear } from '@/lib/types/course-year';
 import { CourseFee } from '@/lib/types/course-fee';

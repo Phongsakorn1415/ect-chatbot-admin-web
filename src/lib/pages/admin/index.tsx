@@ -8,7 +8,7 @@ import { useRouter } from 'next/navigation'
 import { IUser } from '@/lib/types/user'
 import { useContext } from 'react'
 import { stat } from 'fs'
-import MenuDrawer from '@/lib/components/MenuDrawer'
+import MenuDrawer from '@/lib/components/pageComponent/courses/MenuDrawer'
 
 const AdminHomepage = () => {
   const router = useRouter()
