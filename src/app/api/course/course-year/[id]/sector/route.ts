@@ -91,6 +91,23 @@ export async function POST(
       );
     }
 
+    // Prevent duplicate sector in the same course year with the same (year, semester)
+    const existed = await db.education_sector.findFirst({
+      where: {
+        course_yearId: idNum,
+        year: yearNum,
+        semester: semesterNum,
+      },
+      select: { id: true },
+    });
+
+    if (existed) {
+      return NextResponse.json(
+        { message: "ภาคการศึกษาปีนี้และภาคการเรียนนี้มีอยู่แล้ว" },
+        { status: 409 }
+      );
+    }
+
     const newSector = await db.education_sector.create({
       data: {
         year: yearNum,

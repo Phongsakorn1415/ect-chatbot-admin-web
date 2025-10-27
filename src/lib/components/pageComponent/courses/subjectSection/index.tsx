@@ -29,6 +29,7 @@ import AddIcon from '@mui/icons-material/Add';
 import { educationSector } from "@/lib/types/course-year";
 import { Subject } from "@/lib/types/subject";
 import SubjectTable from "./subjectTable";
+import CustomAlert from "@/lib/components/customAlert";
 
 type TabPanelProps = {
     children?: React.ReactNode;
@@ -72,6 +73,8 @@ const SubjectSection: React.FC<{ courseYearId: number | null }> = ({ courseYearI
     const [subjectsLoading, setSubjectsLoading] = React.useState<Record<number, boolean>>({});
     const [electiveSubjects, setElectiveSubjects] = React.useState<Subject[] | null>(null);
     const [electiveLoading, setElectiveLoading] = React.useState<boolean>(false);
+    const [courseSubjects, setCourseSubjects] = React.useState<Subject[] | null>(null);
+    const [courseSubjectsLoading, setCourseSubjectsLoading] = React.useState<boolean>(false);
 
     // Modal state
     const [openAdd, setOpenAdd] = React.useState(false);
@@ -79,6 +82,27 @@ const SubjectSection: React.FC<{ courseYearId: number | null }> = ({ courseYearI
     const [semesterMode, setSemesterMode] = React.useState<"number" | "summer">("number");
     const [semesterInput, setSemesterInput] = React.useState<number | "">("");
     const [submitting, setSubmitting] = React.useState(false);
+
+    // Alert state (using CustomAlert)
+    const [alertOpen, setAlertOpen] = React.useState(false);
+    const [alertMessage, setAlertMessage] = React.useState("");
+    const [alertSeverity, setAlertSeverity] = React.useState<'error' | 'warning' | 'info' | 'success'>("info");
+    const alertTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+
+    const showAlert = (message: string, severity: 'error' | 'warning' | 'info' | 'success' = 'info', duration = 4000) => {
+        // clear any existing timer
+        if (alertTimerRef.current) {
+            clearTimeout(alertTimerRef.current as unknown as number);
+            alertTimerRef.current = null;
+        }
+        setAlertMessage(message);
+        setAlertSeverity(severity);
+        setAlertOpen(true);
+        alertTimerRef.current = setTimeout(() => {
+            setAlertOpen(false);
+            alertTimerRef.current = null;
+        }, duration);
+    };
 
     const fetchSemesters = React.useCallback(async (): Promise<educationSector[]> => {
         // Guard: don't call API if courseYearId is not ready
@@ -102,58 +126,28 @@ const SubjectSection: React.FC<{ courseYearId: number | null }> = ({ courseYearI
         }
     }, [courseYearId]);
 
-    const fetchAllSubjectsForSemesters = React.useCallback(async (sectors: educationSector[]) => {
-        if (!Array.isArray(sectors) || sectors.length === 0) {
-            setSubjectsMap({});
-            setSubjectsLoading({});
-            return;
+    // Fetch all subjects once by course year, then filter per sector/elective
+    const fetchCourseYearSubjects = React.useCallback(async () => {
+        if (courseYearId == null || Number.isNaN(Number(courseYearId))) {
+            setCourseSubjects([]);
+            setCourseSubjectsLoading(false);
+            return [] as Subject[];
         }
-        // Mark all sectors as loading
-        setSubjectsLoading(sectors.reduce<Record<number, boolean>>((acc, s) => {
-            acc[s.id] = true;
-            return acc;
-        }, {}));
-
         try {
-            const results = await Promise.allSettled(
-                sectors.map(async (s) => {
-                    const res = await fetch(`/api/course/education-sector/${s.id}/subject`);
-                    const json = await res.json();
-                    const subjects: Subject[] = Array.isArray(json)
-                        ? json
-                        : (Array.isArray(json?.data) ? json.data : []);
-                    return { id: s.id, subjects };
-                })
-            );
-
-            const nextMap: Record<number, Subject[]> = {};
-            const nextLoading: Record<number, boolean> = {};
-            results.forEach(r => {
-                if (r.status === 'fulfilled') {
-                    nextMap[r.value.id] = r.value.subjects;
-                    nextLoading[r.value.id] = false;
-                } else {
-                    // On failure, set empty list for that sector
-                    // We don't have sector id here directly; fallback by index mapping
-                }
-            });
-            // Ensure any missing ids (due to rejection) are set empty and not loading
-            sectors.forEach(s => {
-                if (!(s.id in nextMap)) nextMap[s.id] = [];
-                if (!(s.id in nextLoading)) nextLoading[s.id] = false;
-            });
-
-            setSubjectsMap(nextMap);
-            setSubjectsLoading(nextLoading);
+            setCourseSubjectsLoading(true);
+            const res = await fetch(`/api/course/course-year/${courseYearId}/subject`);
+            const json = await res.json();
+            const subs: Subject[] = Array.isArray(json) ? json : (Array.isArray(json?.data) ? json.data : []);
+            setCourseSubjects(subs);
+            return subs;
         } catch (err) {
-            console.error('Error fetching subjects for all sectors', err);
-            // Fall back to empty but not loading
-            const emptyMap = sectors.reduce<Record<number, Subject[]>>((acc, s) => { acc[s.id] = []; return acc; }, {});
-            const notLoading = sectors.reduce<Record<number, boolean>>((acc, s) => { acc[s.id] = false; return acc; }, {});
-            setSubjectsMap(emptyMap);
-            setSubjectsLoading(notLoading);
+            console.error('Error fetching course year subjects', err);
+            setCourseSubjects([]);
+            return [] as Subject[];
+        } finally {
+            setCourseSubjectsLoading(false);
         }
-    }, []);
+    }, [courseYearId]);
 
     React.useEffect(() => {
         // When courseYearId changes, reset per-sector caches to avoid stale data
@@ -161,20 +155,30 @@ const SubjectSection: React.FC<{ courseYearId: number | null }> = ({ courseYearI
         setSubjectsLoading({});
         setElectiveSubjects(null);
         setElectiveLoading(false);
-        // Fetch all semesters for the course year (guarded inside fetchSemesters)
+        // Reset tab to the first tab to avoid out-of-range selection when switching course year
+        setValue(0);
+        // Fetch all semesters and all subjects for the course year (guarded inside)
         fetchSemesters();
-    }, [fetchSemesters]);
+        fetchCourseYearSubjects();
+    }, [fetchSemesters, fetchCourseYearSubjects]);
 
-    // After semesters are loaded, fetch subjects for all semesters in parallel once
+    // When semesters or course subjects change, map subjects to each sector and set per-sector loading
     React.useEffect(() => {
-        if (Array.isArray(allSemesters) && allSemesters.length > 0) {
-            fetchAllSubjectsForSemesters(allSemesters);
-        } else {
-            // Clear when no semesters
+        const sectors = Array.isArray(allSemesters) ? allSemesters : [];
+        if (sectors.length === 0) {
             setSubjectsMap({});
             setSubjectsLoading({});
+            return;
         }
-    }, [allSemesters, fetchAllSubjectsForSemesters]);
+        const map: Record<number, Subject[]> = {};
+        const loadingMap: Record<number, boolean> = {};
+        sectors.forEach(s => {
+            map[s.id] = (courseSubjects || []).filter(sub => sub.education_sectorId === s.id);
+            loadingMap[s.id] = !!courseSubjectsLoading; 
+        });
+        setSubjectsMap(map);
+        setSubjectsLoading(loadingMap);
+    }, [allSemesters, courseSubjects, courseSubjectsLoading]);
 
     const handleChange = (_event: React.SyntheticEvent, newValue: number) => {
         // If clicking the add tab (last tab), open modal and keep current selection
@@ -185,37 +189,24 @@ const SubjectSection: React.FC<{ courseYearId: number | null }> = ({ courseYearI
         setValue(newValue);
     };
 
-    const fetchElectives = React.useCallback(async () => {
-        // Guard: require valid courseYearId for elective filtering
-        if (courseYearId == null || Number.isNaN(Number(courseYearId))) {
-            setElectiveSubjects([]);
+    // Derive electives from courseSubjects
+    React.useEffect(() => {
+        setElectiveLoading(!!courseSubjectsLoading);
+        if (!courseSubjects) {
+            setElectiveSubjects(null);
             return;
         }
-        try {
-            setElectiveLoading(true);
-            const res = await fetch(`/api/course/subject`);
-            const json = await res.json();
-            const subjects: Subject[] = Array.isArray(json)
-                ? json
-                : (Array.isArray(json?.data) ? json.data : []);
-            // Electives must be isRequire === false AND match current courseYearId
-            const electives = subjects.filter((s) => s?.isRequire === false && s?.course_yearId === courseYearId);
-            setElectiveSubjects(electives);
-        } catch (error) {
-            console.error("Error fetching elective subjects:", error);
-            setElectiveSubjects([]);
-        } finally {
-            setElectiveLoading(false);
-        }
-    }, [courseYearId]);
+        const electives = courseSubjects.filter(s => s?.isRequire === false);
+        setElectiveSubjects(electives);
+    }, [courseSubjects, courseSubjectsLoading]);
 
-    // Lazy-load electives when the elective tab is selected
+    // Keep tab index within available bounds whenever semesters change
     React.useEffect(() => {
-        const electiveIndex = (Array.isArray(allSemesters) ? allSemesters : []).length;
-        if (value === electiveIndex && electiveSubjects === null && !electiveLoading) {
-            fetchElectives();
+        const maxSelectableIndex = (Array.isArray(allSemesters) ? allSemesters.length : 0) + 1; // includes elective and add tabs
+        if (value > maxSelectableIndex) {
+            setValue(0);
         }
-    }, [value, allSemesters, electiveSubjects, electiveLoading, fetchElectives]);
+    }, [allSemesters, value]);
 
     const resetForm = () => {
         setYearInput("");
@@ -235,7 +226,7 @@ const SubjectSection: React.FC<{ courseYearId: number | null }> = ({ courseYearI
 
     const handleSubmit = async () => {
         if (courseYearId == null) {
-            window.alert("กรุณาเลือกหลักสูตรก่อนเพิ่มภาคการศึกษา");
+            showAlert("กรุณาเลือกหลักสูตรก่อนเพิ่มภาคการศึกษา", 'warning');
             return;
         }
         const year = typeof yearInput === "number" ? yearInput : NaN;
@@ -245,7 +236,15 @@ const SubjectSection: React.FC<{ courseYearId: number | null }> = ({ courseYearI
 
         if (!isValidYear(year) || (semesterMode === "number" && !isValidSemesterNumber(semester))) {
             // Very simple feedback
-            window.alert("กรุณากรอกข้อมูลให้ถูกต้อง: ปีการศึกษาและภาคการศึกษา (ตัวเลขต้องมากกว่าหรือเท่ากับ 1)");
+            showAlert("กรุณากรอกข้อมูลให้ถูกต้อง: ปีการศึกษาและภาคการศึกษา (ตัวเลขต้องมากกว่าหรือเท่ากับ 1)", 'warning');
+            return;
+        }
+
+        // Prevent duplicate: same year and semester already exists in current list
+        const hasDuplicate = (Array.isArray(allSemesters) ? allSemesters : [])
+            .some(s => s.year === year && s.semester === semester);
+        if (hasDuplicate) {
+            showAlert("ภาคการศึกษาปีและภาคการเรียนนี้มีอยู่แล้ว", 'warning');
             return;
         }
 
@@ -260,8 +259,20 @@ const SubjectSection: React.FC<{ courseYearId: number | null }> = ({ courseYearI
             });
 
             if (!res.ok) {
-                const msg = await res.text();
-                throw new Error(msg || "สร้างภาคการศึกษาไม่สำเร็จ");
+                // Try to extract message from JSON; fallback to plain text
+                let errMsg = "สร้างภาคการศึกษาไม่สำเร็จ";
+                try {
+                    const data = await res.json();
+                    errMsg = data?.message || errMsg;
+                } catch (_jsonErr) {
+                    try {
+                        const text = await res.text();
+                        errMsg = text || errMsg;
+                    } catch {
+                        // ignore
+                    }
+                }
+                throw new Error(errMsg);
             }
 
             const json = await res.json();
@@ -278,7 +289,8 @@ const SubjectSection: React.FC<{ courseYearId: number | null }> = ({ courseYearI
             resetForm();
         } catch (e) {
             console.error(e);
-            window.alert("เกิดข้อผิดพลาดในการสร้างภาคการศึกษา");
+            const message = e instanceof Error && e.message ? e.message : "เกิดข้อผิดพลาดในการสร้างภาคการศึกษา";
+            showAlert(message, 'error');
         } finally {
             setSubmitting(false);
         }
@@ -305,7 +317,7 @@ const SubjectSection: React.FC<{ courseYearId: number | null }> = ({ courseYearI
             }
         } catch (e) {
             console.error(e);
-            window.alert("เกิดข้อผิดพลาดในการลบภาคการศึกษา");
+            showAlert("เกิดข้อผิดพลาดในการลบภาคการศึกษา", 'error');
         }
     };
 
@@ -478,6 +490,9 @@ const SubjectSection: React.FC<{ courseYearId: number | null }> = ({ courseYearI
                     </Button>
                 </DialogActions>
             </Dialog>
+            {alertOpen && (
+                <CustomAlert message={alertMessage} severity={alertSeverity} />
+            )}
         </>
     );
 };
