@@ -9,7 +9,7 @@ export async function PATCH(
 ) {
     try {
         const body = await req.json();
-        const { name, credit, language, isRequire, education_sectorId } = body;
+        const { name, credit, language, isRequire, education_sectorId, course_yearId } = body;
         const { id } = await params;
 
         const updatedSubject = await db.subject.update({
@@ -19,7 +19,8 @@ export async function PATCH(
                 credit,
                 language,
                 isRequire,
-                education_sectorId
+                education_sectorId,
+                course_yearId
             },
         });
         return NextResponse.json({

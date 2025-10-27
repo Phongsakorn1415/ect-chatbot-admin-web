@@ -18,14 +18,15 @@ export async function GET() {
 export async function POST(req: Request) {
     try {
         const body = await req.json();
-        const { name, credit, language, isRequire, education_sectorId } = body;
+        const { name, credit, language, isRequire, education_sectorId, course_yearId } = body;
         const newSubject = await db.subject.create({
             data: {
                 name,
                 credit,
                 language,
                 isRequire,
-                education_sectorId
+                education_sectorId : education_sectorId ?? null,
+                course_yearId
             },
         });
         return NextResponse.json({

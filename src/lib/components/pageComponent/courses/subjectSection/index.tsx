@@ -186,6 +186,11 @@ const SubjectSection: React.FC<{ courseYearId: number | null }> = ({ courseYearI
     };
 
     const fetchElectives = React.useCallback(async () => {
+        // Guard: require valid courseYearId for elective filtering
+        if (courseYearId == null || Number.isNaN(Number(courseYearId))) {
+            setElectiveSubjects([]);
+            return;
+        }
         try {
             setElectiveLoading(true);
             const res = await fetch(`/api/course/subject`);
@@ -193,7 +198,8 @@ const SubjectSection: React.FC<{ courseYearId: number | null }> = ({ courseYearI
             const subjects: Subject[] = Array.isArray(json)
                 ? json
                 : (Array.isArray(json?.data) ? json.data : []);
-            const electives = subjects.filter((s) => s?.isRequire === false);
+            // Electives must be isRequire === false AND match current courseYearId
+            const electives = subjects.filter((s) => s?.isRequire === false && s?.course_yearId === courseYearId);
             setElectiveSubjects(electives);
         } catch (error) {
             console.error("Error fetching elective subjects:", error);
@@ -201,7 +207,7 @@ const SubjectSection: React.FC<{ courseYearId: number | null }> = ({ courseYearI
         } finally {
             setElectiveLoading(false);
         }
-    }, []);
+    }, [courseYearId]);
 
     // Lazy-load electives when the elective tab is selected
     React.useEffect(() => {
@@ -379,14 +385,14 @@ const SubjectSection: React.FC<{ courseYearId: number | null }> = ({ courseYearI
                                     if (electiveLoading) {
                                         return (
                                             <TableRow>
-                                                <TableCell colSpan={4} align="center">กำลังโหลด...</TableCell>
+                                                <TableCell colSpan={3} align="center">กำลังโหลด...</TableCell>
                                             </TableRow>
                                         );
                                     }
                                     if (!electiveSubjects) {
                                         return (
                                             <TableRow>
-                                                <TableCell colSpan={4} align="center">ไม่มีข้อมูลวิชา</TableCell>
+                                                <TableCell colSpan={3} align="center">ไม่มีข้อมูลวิชา</TableCell>
                                             </TableRow>
                                         );
                                     }
@@ -401,7 +407,7 @@ const SubjectSection: React.FC<{ courseYearId: number | null }> = ({ courseYearI
                                     }
                                     return (
                                         <TableRow>
-                                            <TableCell colSpan={4} align="center">ไม่มีข้อมูลวิชา</TableCell>
+                                            <TableCell colSpan={3} align="center">ไม่มีข้อมูลวิชา</TableCell>
                                         </TableRow>
                                     );
                                 })()}
