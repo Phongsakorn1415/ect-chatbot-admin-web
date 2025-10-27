@@ -55,34 +55,43 @@ const FeeSection: React.FC<Props> = ({ courseYearId, courseFee, onUpdated }) => 
 		setIsEditMode(false);
 	}, [courseFee, courseYearId]);
 
-		const handleSave = async () => {
-			if (courseYearId == null) {
-				showAlert("กรุณาเลือกหลักสูตรก่อนบันทึก", "warning");
-				return;
-			}
+	const handleSave = async () => {
+		if (courseYearId == null) {
+			showAlert("กรุณาเลือกหลักสูตรก่อนบันทึก", "warning");
+			return;
+		}
+		const confirm = window.confirm("คุณแน่ใจหรือไม่ว่าต้องการบันทึกการแก้ไข?");
+		if (!confirm) return;
 		try {
 			const response = await fetch(`/api/course/course-fee/${courseYearId}`, {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
 				body: JSON.stringify({ normal: normalFee, summer: summerFee }),
 			});
-				if (!response.ok) throw new Error(`Save failed: ${response.status}`);
+			if (!response.ok) throw new Error(`Save failed: ${response.status}`);
 			const data = await response.json();
 			const updated: CourseFee = data?.data;
 			onUpdated?.(updated);
 			setIsEditMode(false);
-				showAlert("บันทึกค่าเทอมสำเร็จ", "success");
+			showAlert("บันทึกค่าเทอมสำเร็จ", "success");
 		} catch (err) {
-				console.error(err);
-				showAlert("บันทึกค่าเทอมไม่สำเร็จ กรุณาลองอีกครั้ง", "error");
+			console.error(err);
+			showAlert("บันทึกค่าเทอมไม่สำเร็จ กรุณาลองอีกครั้ง", "error");
 		}
 	};
 
+	const handleCancel = () => {
+		setIsEditMode(false);
+		// reset values from props
+		setNormalFee(courseFee ? courseFee.normal : 0);
+		setSummerFee(courseFee ? courseFee.summer : 0);
+	}
+
 	return (
 		<>
-				{alertOpen && (
-					<CustomAlert message={alertMessage} severity={alertSeverity} />
-				)}
+			{alertOpen && (
+				<CustomAlert message={alertMessage} severity={alertSeverity} />
+			)}
 			<Grid container spacing={2} sx={{ mt: 1 }}>
 				<Grid size={6}>
 					<Typography sx={{ mt: 2, mb: 1, fontSize: "175%", textAlign: "left" }}>
@@ -96,12 +105,7 @@ const FeeSection: React.FC<Props> = ({ courseYearId, courseFee, onUpdated }) => 
 								variant="contained"
 								color="error"
 								sx={{ mr: 2 }}
-								onClick={() => {
-									setIsEditMode(false);
-									// reset values from props
-									setNormalFee(courseFee ? courseFee.normal : 0);
-									setSummerFee(courseFee ? courseFee.summer : 0);
-								}}
+								onClick={handleCancel}
 							>
 								ยกเลิก
 							</Button>
@@ -120,7 +124,7 @@ const FeeSection: React.FC<Props> = ({ courseYearId, courseFee, onUpdated }) => 
 					)}
 				</Grid>
 			</Grid>
-			<Grid container spacing={2} sx={{ mt: 1 }}>
+			<Grid container spacing={2} sx={{ mt: 1, mb: 4 }}>
 				<Grid size={{ xs: 12, md: 6 }}>
 					<TextField
 						id="normalFee"

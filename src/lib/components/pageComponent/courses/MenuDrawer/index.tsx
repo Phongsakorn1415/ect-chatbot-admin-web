@@ -1,13 +1,18 @@
 import { PageDrawerProps } from "@/lib/types/PageDrawer";
-import { Collapse, Drawer, List, ListItem, ListItemButton, ListItemIcon, ListItemText, Typography } from "@mui/material";
+import { Box, Collapse, Drawer, List, ListItem, ListItemButton, ListItemIcon, ListItemText, Typography, Tooltip } from "@mui/material";
 import React from 'react'
 import AddIcon from '@mui/icons-material/Add';
 import ExpandLess from '@mui/icons-material/ExpandLess';
 import ExpandMore from '@mui/icons-material/ExpandMore';
+import PublicOffIcon from '@mui/icons-material/PublicOff';
+import PublicIcon from '@mui/icons-material/Public';
+import useBreakPointResolution from '@/lib/services/BreakPointResolusion';
 
-// Page-scoped permanent drawer that reserves space within the page layout (not overlaying the global MainDrawer)
+// Page-scoped drawer: overlays on mobile/tablet; reserves space on desktop
 const MenuDrawer: React.FC<PageDrawerProps> = ({ isOpen, drawerWidth, items, showAddButton = false, addButtonText, onAddButtonClick }) => {
-  const width = isOpen ? drawerWidth : 0;
+  const { isMobile, isTablet } = useBreakPointResolution();
+  const isOverlay = isMobile || isTablet;
+  const width = drawerWidth;
 
   // Track which parent items are expanded
   const [openMap, setOpenMap] = React.useState<Record<string, boolean>>({});
@@ -21,24 +26,38 @@ const MenuDrawer: React.FC<PageDrawerProps> = ({ isOpen, drawerWidth, items, sho
       variant="permanent"
       open
       sx={{
-        width,
+        width: isOverlay ? 0 : (isOpen ? width : 0),
         flexShrink: 0,
         whiteSpace: 'nowrap',
-        overflowX: 'hidden',
-        transition: (theme) => theme.transitions.create('width', {
-          easing: theme.transitions.easing.sharp,
-          duration: theme.transitions.duration.standard,
-        }),
+        overflow: isOverlay ? 'visible' : 'hidden',
+        position: 'relative',
+        transition: isOverlay
+          ? undefined
+          : (theme) => theme.transitions.create('width', {
+              easing: theme.transitions.easing.sharp,
+              duration: theme.transitions.duration.standard,
+            }),
         '& .MuiDrawer-paper': {
-          position: 'relative',
-          width,
+          position: isOverlay ? 'absolute' : 'relative',
+          left: 0,
+          top: 0,
+          height: '100%',
+          width: width,
           boxSizing: 'border-box',
           overflowX: 'hidden',
-          transition: (theme) => theme.transitions.create('width', {
-            easing: theme.transitions.easing.sharp,
-            duration: theme.transitions.duration.standard,
-          }),
-          borderRight: width === 0 ? 'none' : undefined,
+          willChange: isOverlay ? 'transform' : undefined,
+          transform: isOverlay ? `translateX(${isOpen ? 0 : -width}px)` : 'none',
+          transition: isOverlay
+            ? (theme) => theme.transitions.create('transform', {
+                easing: theme.transitions.easing.sharp,
+                duration: theme.transitions.duration.standard,
+              })
+            : (theme) => theme.transitions.create('width', {
+                easing: theme.transitions.easing.sharp,
+                duration: theme.transitions.duration.standard,
+              }),
+          borderRight: (theme) => `1px solid ${theme.palette.divider}`,
+          zIndex: (theme) => (isOverlay ? theme.zIndex.drawer : 'auto'),
         },
       }}
     >
@@ -51,7 +70,27 @@ const MenuDrawer: React.FC<PageDrawerProps> = ({ isOpen, drawerWidth, items, sho
             <React.Fragment key={item.id}>
               <ListItem disablePadding>
                 <ListItemButton onClick={item.onClick}>
-                  <ListItemText primary={item.title} />
+                  {/* {
+                    item.status && (
+                      <ListItemIcon>
+                        {item.status === 'PUBLISHED' ? <PublicIcon color="success" /> : <PublicOffIcon color="disabled" />}
+                      </ListItemIcon>
+                    )
+                  } */}
+                  <ListItemText primary={
+                    <Box component="span" sx={{ display: 'flex', alignItems: 'center' }}>
+                      {item.status && (
+                        <Tooltip title={item.status === 'PUBLISHED' ? 'เผยแพร่แล้ว' : 'ยังไม่เผยแพร่'} placement="top">
+                          {item.status === 'PUBLISHED' ? (
+                            <PublicIcon color="success" sx={{ ml: 1, verticalAlign: 'middle', fontSize: '1.5rem', mr: 1 }} />
+                          ) : (
+                            <PublicOffIcon color="disabled" sx={{ ml: 1, verticalAlign: 'middle', fontSize: '1.5rem', mr: 1 }} />
+                          )}
+                        </Tooltip>
+                      )}
+                      {item.title}
+                    </Box>
+                  } />
                   {hasChildren ? (
                     <ListItemIcon
                       onClick={(e) => {
@@ -60,7 +99,9 @@ const MenuDrawer: React.FC<PageDrawerProps> = ({ isOpen, drawerWidth, items, sho
                       }}
                       sx={{ minWidth: 36, cursor: 'pointer' }}
                     >
-                      {isExpanded ? <ExpandLess /> : <ExpandMore />}
+                      <Tooltip title={isExpanded ? 'ย่อ' : 'ขยาย'}>
+                        {isExpanded ? <ExpandLess /> : <ExpandMore />}
+                      </Tooltip>
                     </ListItemIcon>
                   ) : null}
                 </ListItemButton>
@@ -83,7 +124,7 @@ const MenuDrawer: React.FC<PageDrawerProps> = ({ isOpen, drawerWidth, items, sho
         })}
         {showAddButton && (
           <ListItem>
-            <ListItemButton sx={{bgcolor: 'lightgray', borderRadius: '10px', '&:hover': {bgcolor: 'gray'}}} onClick={onAddButtonClick}>
+            <ListItemButton sx={{ bgcolor: 'lightgray', borderRadius: '10px', '&:hover': { bgcolor: 'gray' } }} onClick={onAddButtonClick}>
               <ListItemIcon><AddIcon /></ListItemIcon>
               <ListItemText primary={addButtonText} />
             </ListItemButton>

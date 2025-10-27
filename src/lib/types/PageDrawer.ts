@@ -1,6 +1,7 @@
 export interface DrawerMenuItem {
     id: string;
     title: string;
+    status: 'DRAFT' | 'PUBLISHED';
     // Optional nested submenu items
     children?: DrawerMenuItem[];
     // Optional click handler or route in future

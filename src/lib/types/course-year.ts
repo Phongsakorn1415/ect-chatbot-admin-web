@@ -5,3 +5,12 @@ export interface CourseYear {
   createdAt: string;
   updatedAt: string;
 }
+
+export interface educationSector {
+  id: number;
+  year: number;
+  semester: number;
+  createdAt: string;
+  updatedAt: string;
+  course_yearId: number;
+}

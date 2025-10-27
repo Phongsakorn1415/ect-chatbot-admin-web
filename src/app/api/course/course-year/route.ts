@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 
 export async function GET(){
     try {
-        const courseYears = await db.Course_year.findMany({
+        const courseYears = await db.course_year.findMany({
             orderBy: {
                 year: 'desc'
             }
@@ -23,12 +23,12 @@ export async function POST(req: Request) {
         const body = await req.json();
         const { year, normalFee, summerFee } = body;
 
-        const newCourseYear = await db.Course_year.create({
+        const newCourseYear = await db.course_year.create({
             data: {
                 year: year
             }
         });
-        const TuitionFee = await db.Tuition_fees.create({
+        const TuitionFee = await db.tuition_fees.create({
             data: {
                 normal: normalFee?? 0,
                 summer: summerFee?? 0,
@@ -41,26 +41,6 @@ export async function POST(req: Request) {
         );
     } catch (error) {
         console.error('Error creating course year:', error);
-        return NextResponse.error();
-    }
-}
-
-export async function DELETE(req: Request) {
-    try {
-        const { searchParams } = new URL(req.url);
-        const id = searchParams.get('id');
-        if (!id) {
-            return NextResponse.json({ message: "Course year ID is required" }, { status: 400 });
-        }
-        await db.Course_year.delete({
-            where: { id: Number(id) }
-        });
-        await db.Tuition_fees.deleteMany({
-            where: { course_yearId: Number(id) }
-        });
-        return NextResponse.json({ message: "Course year deleted successfully" }, { status: 200 });
-    } catch (error) {
-        console.error('Error deleting course year:', error);
         return NextResponse.error();
     }
 }

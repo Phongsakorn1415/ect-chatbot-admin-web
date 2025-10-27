@@ -5,18 +5,19 @@ import { NextResponse } from "next/server";
 // Return tuition fee by course year id (path param)
 export async function GET(
   _req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const idNum = Number(params.id);
-    if (!params.id || Number.isNaN(idNum)) {
+    const { id } = await params;
+    const idNum = Number(id);
+    if (!id || Number.isNaN(idNum)) {
       return NextResponse.json(
         { message: "Invalid or missing course year id" },
         { status: 400 }
       );
     }
 
-    const courseFee = await db.Tuition_fees.findFirst({
+    const courseFee = await db.tuition_fees.findFirst({
       where: { course_yearId: idNum },
     });
 
@@ -38,11 +39,12 @@ export async function GET(
 // Upsert tuition fee for a given course year id (path param)
 export async function POST(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const idNum = Number(params.id);
-    if (!params.id || Number.isNaN(idNum)) {
+    const { id } = await params;
+    const idNum = Number(id);
+    if (!id || Number.isNaN(idNum)) {
       return NextResponse.json(
         { message: "Invalid or missing course year id" },
         { status: 400 }
@@ -52,13 +54,13 @@ export async function POST(
     const body = await request.json().catch(() => ({}));
     const { normal, summer } = body ?? {};
 
-    const existing = await db.Tuition_fees.findFirst({
+    const existing = await db.tuition_fees.findFirst({
       where: { course_yearId: idNum },
     });
 
     let saved;
     if (existing) {
-      saved = await db.Tuition_fees.update({
+      saved = await db.tuition_fees.update({
         where: { id: existing.id },
         data: {
           normal: normal ?? existing.normal ?? 0,
@@ -66,7 +68,7 @@ export async function POST(
         },
       });
     } else {
-      saved = await db.Tuition_fees.create({
+      saved = await db.tuition_fees.create({
         data: {
           course_yearId: idNum,
           normal: normal ?? 0,
