@@ -27,6 +27,7 @@ import {
 } from "@mui/material";
 import AddIcon from '@mui/icons-material/Add';
 import { educationSector } from "@/lib/types/course-year";
+import { Subject } from "@/lib/types/subject";
 import SubjectTable from "./subjectTable";
 
 type TabPanelProps = {
@@ -62,20 +63,15 @@ function a11yProps(index: number) {
     } as const;
 }
 
-type Subject = {
-    id: number;
-    name?: string | null;
-    credit?: number | null;
-    language?: string | null;
-    isRequire?: boolean | null;
-    education_sectorId?: number | null;
-};
+// Using shared Subject type from src/lib/types/subject
 
 const SubjectSection: React.FC<{ courseYearId: number | null }> = ({ courseYearId }) => {
     const [value, setValue] = React.useState(0);
     const [allSemesters, setAllSemesters] = React.useState<educationSector[]>([]);
     const [subjectsMap, setSubjectsMap] = React.useState<Record<number, Subject[]>>({});
     const [subjectsLoading, setSubjectsLoading] = React.useState<Record<number, boolean>>({});
+    const [electiveSubjects, setElectiveSubjects] = React.useState<Subject[] | null>(null);
+    const [electiveLoading, setElectiveLoading] = React.useState<boolean>(false);
 
     // Modal state
     const [openAdd, setOpenAdd] = React.useState(false);
@@ -106,20 +102,56 @@ const SubjectSection: React.FC<{ courseYearId: number | null }> = ({ courseYearI
         }
     }, [courseYearId]);
 
-    const fetchSubjects = React.useCallback(async (sectorId: number) => {
+    const fetchAllSubjectsForSemesters = React.useCallback(async (sectors: educationSector[]) => {
+        if (!Array.isArray(sectors) || sectors.length === 0) {
+            setSubjectsMap({});
+            setSubjectsLoading({});
+            return;
+        }
+        // Mark all sectors as loading
+        setSubjectsLoading(sectors.reduce<Record<number, boolean>>((acc, s) => {
+            acc[s.id] = true;
+            return acc;
+        }, {}));
+
         try {
-            setSubjectsLoading(prev => ({ ...prev, [sectorId]: true }));
-            const res = await fetch(`/api/course/education-sector/${sectorId}/subject`);
-            const json = await res.json();
-            const subjects: Subject[] = Array.isArray(json)
-                ? json
-                : (Array.isArray(json?.data) ? json.data : []);
-            setSubjectsMap(prev => ({ ...prev, [sectorId]: subjects }));
-        } catch (error) {
-            console.error("Error fetching subjects for sector", sectorId, error);
-            setSubjectsMap(prev => ({ ...prev, [sectorId]: [] }));
-        } finally {
-            setSubjectsLoading(prev => ({ ...prev, [sectorId]: false }));
+            const results = await Promise.allSettled(
+                sectors.map(async (s) => {
+                    const res = await fetch(`/api/course/education-sector/${s.id}/subject`);
+                    const json = await res.json();
+                    const subjects: Subject[] = Array.isArray(json)
+                        ? json
+                        : (Array.isArray(json?.data) ? json.data : []);
+                    return { id: s.id, subjects };
+                })
+            );
+
+            const nextMap: Record<number, Subject[]> = {};
+            const nextLoading: Record<number, boolean> = {};
+            results.forEach(r => {
+                if (r.status === 'fulfilled') {
+                    nextMap[r.value.id] = r.value.subjects;
+                    nextLoading[r.value.id] = false;
+                } else {
+                    // On failure, set empty list for that sector
+                    // We don't have sector id here directly; fallback by index mapping
+                }
+            });
+            // Ensure any missing ids (due to rejection) are set empty and not loading
+            sectors.forEach(s => {
+                if (!(s.id in nextMap)) nextMap[s.id] = [];
+                if (!(s.id in nextLoading)) nextLoading[s.id] = false;
+            });
+
+            setSubjectsMap(nextMap);
+            setSubjectsLoading(nextLoading);
+        } catch (err) {
+            console.error('Error fetching subjects for all sectors', err);
+            // Fall back to empty but not loading
+            const emptyMap = sectors.reduce<Record<number, Subject[]>>((acc, s) => { acc[s.id] = []; return acc; }, {});
+            const notLoading = sectors.reduce<Record<number, boolean>>((acc, s) => { acc[s.id] = false; return acc; }, {});
+            setSubjectsMap(emptyMap);
+            setSubjectsLoading(notLoading);
         }
     }, []);
 
@@ -127,26 +159,57 @@ const SubjectSection: React.FC<{ courseYearId: number | null }> = ({ courseYearI
         // When courseYearId changes, reset per-sector caches to avoid stale data
         setSubjectsMap({});
         setSubjectsLoading({});
+        setElectiveSubjects(null);
+        setElectiveLoading(false);
         // Fetch all semesters for the course year (guarded inside fetchSemesters)
         fetchSemesters();
     }, [fetchSemesters]);
 
-    // Lazy-load subjects for the currently selected tab/sector
+    // After semesters are loaded, fetch subjects for all semesters in parallel once
     React.useEffect(() => {
-        const sector = (Array.isArray(allSemesters) ? allSemesters : [])[value];
-        if (sector && subjectsMap[sector.id] === undefined && !subjectsLoading[sector.id]) {
-            fetchSubjects(sector.id);
+        if (Array.isArray(allSemesters) && allSemesters.length > 0) {
+            fetchAllSubjectsForSemesters(allSemesters);
+        } else {
+            // Clear when no semesters
+            setSubjectsMap({});
+            setSubjectsLoading({});
         }
-    }, [allSemesters, value, subjectsMap, subjectsLoading, fetchSubjects]);
+    }, [allSemesters, fetchAllSubjectsForSemesters]);
 
     const handleChange = (_event: React.SyntheticEvent, newValue: number) => {
         // If clicking the add tab (last tab), open modal and keep current selection
-        if (newValue === allSemesters.length) {
+        if (newValue === allSemesters.length+1) {
             setOpenAdd(true);
             return;
         }
         setValue(newValue);
     };
+
+    const fetchElectives = React.useCallback(async () => {
+        try {
+            setElectiveLoading(true);
+            const res = await fetch(`/api/course/subject`);
+            const json = await res.json();
+            const subjects: Subject[] = Array.isArray(json)
+                ? json
+                : (Array.isArray(json?.data) ? json.data : []);
+            const electives = subjects.filter((s) => s?.isRequire === false);
+            setElectiveSubjects(electives);
+        } catch (error) {
+            console.error("Error fetching elective subjects:", error);
+            setElectiveSubjects([]);
+        } finally {
+            setElectiveLoading(false);
+        }
+    }, []);
+
+    // Lazy-load electives when the elective tab is selected
+    React.useEffect(() => {
+        const electiveIndex = (Array.isArray(allSemesters) ? allSemesters : []).length;
+        if (value === electiveIndex && electiveSubjects === null && !electiveLoading) {
+            fetchElectives();
+        }
+    }, [value, allSemesters, electiveSubjects, electiveLoading, fetchElectives]);
 
     const resetForm = () => {
         setYearInput("");
@@ -266,10 +329,15 @@ const SubjectSection: React.FC<{ courseYearId: number | null }> = ({ courseYearI
                             ))
                         }
                         <Tab
+                            label={'วิชาเลือก'}
+                            aria-label="วิชาเลือก"
+                            {...a11yProps(allSemesters.length)}
+                        />
+                        <Tab
                             icon={<AddIcon />}
                             sx={{ color: 'black' }}
                             aria-label="เพิ่มภาคการศึกษา"
-                            {...a11yProps(allSemesters.length)}
+                            {...a11yProps(allSemesters.length+1)}
                         />
                     </Tabs>
                 </Box>
@@ -286,12 +354,61 @@ const SubjectSection: React.FC<{ courseYearId: number | null }> = ({ courseYearI
                             </Typography>
 
                             <Box sx={{ width: '100%', overflow: 'hidden' }}>
-                                <SubjectTable SemesterId={sector.id} />
+                                <SubjectTable subjects={subjectsMap[sector.id] ?? null} loading={subjectsLoading[sector.id] ?? false} />
                             </Box>
 
                         </CustomTabPanel>
                     ))
                 }
+                {/* Elective subjects tab panel */}
+                <CustomTabPanel key="elective" value={value} index={(Array.isArray(allSemesters) ? allSemesters : []).length}>
+                    <Typography sx={{ mb: 2, fontSize: "125%", alignContent: "center" }}>
+                        รายการวิชาเลือก
+                    </Typography>
+                    <TableContainer>
+                        <Table stickyHeader>
+                            <TableHead>
+                                <TableRow>
+                                    <TableCell>ชื่อวิชา</TableCell>
+                                    <TableCell>หน่วยกิต</TableCell>
+                                    <TableCell>สอนด้วยภาษา</TableCell>
+                                </TableRow>
+                            </TableHead>
+                            <TableBody>
+                                {(() => {
+                                    if (electiveLoading) {
+                                        return (
+                                            <TableRow>
+                                                <TableCell colSpan={4} align="center">กำลังโหลด...</TableCell>
+                                            </TableRow>
+                                        );
+                                    }
+                                    if (!electiveSubjects) {
+                                        return (
+                                            <TableRow>
+                                                <TableCell colSpan={4} align="center">ไม่มีข้อมูลวิชา</TableCell>
+                                            </TableRow>
+                                        );
+                                    }
+                                    if (Array.isArray(electiveSubjects) && electiveSubjects.length > 0) {
+                                        return electiveSubjects.map((subject) => (
+                                            <TableRow key={subject.id}>
+                                                <TableCell>{subject.name ?? '-'}</TableCell>
+                                                <TableCell>{subject.credit ?? '-'}</TableCell>
+                                                <TableCell>{subject.language ?? '-'}</TableCell>
+                                            </TableRow>
+                                        ));
+                                    }
+                                    return (
+                                        <TableRow>
+                                            <TableCell colSpan={4} align="center">ไม่มีข้อมูลวิชา</TableCell>
+                                        </TableRow>
+                                    );
+                                })()}
+                            </TableBody>
+                        </Table>
+                    </TableContainer>
+                </CustomTabPanel>
             </Box>
 
             {/* Add Sector Modal */}
