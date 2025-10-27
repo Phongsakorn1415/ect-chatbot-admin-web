@@ -2,6 +2,7 @@ import { createTheme } from '@mui/material'
 import createTextFieldOverrides from './override/textfield'
 import createTabOverrides from './override/Tab'
 import createRadioOverrides from './override/radioButton'
+import createCheckBoxOverrides from './override/CheckBox'
 
 // Base theme for palette definitions
 const baseTheme = createTheme({
@@ -27,6 +28,7 @@ const MainTheme = createTheme(baseTheme, {
         ...createTextFieldOverrides(baseTheme),
         ...createTabOverrides(baseTheme),
         ...createRadioOverrides(baseTheme),
+        ...createCheckBoxOverrides(baseTheme),
     },
 })
 

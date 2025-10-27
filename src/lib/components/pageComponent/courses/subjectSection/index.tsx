@@ -326,7 +326,7 @@ const SubjectSection: React.FC<{ courseYearId: number | null }> = ({ courseYearI
             <Typography sx={{ mt: 2, mb: 1, fontSize: "175%", textAlign: "left" }}>
                 วิชาที่เปิดสอน
             </Typography>
-            <Button variant="outlined" onClick={() => setOpenAdd(true)}>เพิ่มวิชา</Button>
+            {/* <Button variant="outlined" onClick={() => setOpenAdd(true)}>เพิ่มวิชา</Button> */}
             <Box sx={{ width: "100%" }}>
                 <Box sx={{ borderBottom: 1, borderColor: "divider" }}>
                     <Tabs
@@ -383,49 +383,9 @@ const SubjectSection: React.FC<{ courseYearId: number | null }> = ({ courseYearI
                     <Typography sx={{ mb: 2, fontSize: "125%", alignContent: "center" }}>
                         รายการวิชาเลือก
                     </Typography>
-                    <TableContainer>
-                        <Table stickyHeader>
-                            <TableHead>
-                                <TableRow>
-                                    <TableCell>ชื่อวิชา</TableCell>
-                                    <TableCell>หน่วยกิต</TableCell>
-                                    <TableCell>สอนด้วยภาษา</TableCell>
-                                </TableRow>
-                            </TableHead>
-                            <TableBody>
-                                {(() => {
-                                    if (electiveLoading) {
-                                        return (
-                                            <TableRow>
-                                                <TableCell colSpan={3} align="center">กำลังโหลด...</TableCell>
-                                            </TableRow>
-                                        );
-                                    }
-                                    if (!electiveSubjects) {
-                                        return (
-                                            <TableRow>
-                                                <TableCell colSpan={3} align="center">ไม่มีข้อมูลวิชา</TableCell>
-                                            </TableRow>
-                                        );
-                                    }
-                                    if (Array.isArray(electiveSubjects) && electiveSubjects.length > 0) {
-                                        return electiveSubjects.map((subject) => (
-                                            <TableRow key={subject.id}>
-                                                <TableCell>{subject.name ?? '-'}</TableCell>
-                                                <TableCell>{subject.credit ?? '-'}</TableCell>
-                                                <TableCell>{subject.language ?? '-'}</TableCell>
-                                            </TableRow>
-                                        ));
-                                    }
-                                    return (
-                                        <TableRow>
-                                            <TableCell colSpan={3} align="center">ไม่มีข้อมูลวิชา</TableCell>
-                                        </TableRow>
-                                    );
-                                })()}
-                            </TableBody>
-                        </Table>
-                    </TableContainer>
+                    <Box sx={{ width: '100%', overflow: 'hidden' }}>
+                        <SubjectTable subjects={electiveSubjects ?? null} loading={electiveLoading} />
+                    </Box>
                 </CustomTabPanel>
             </Box>
 
