@@ -1,5 +1,6 @@
 export interface Subject {
     id: number;
+    code?: string | null;
     name: string | null;
     credit: number | null;
     language: string | null;

@@ -18,7 +18,8 @@ export async function GET() {
 export async function POST(req: Request) {
     try {
         const body = await req.json();
-    const { name, credit, language, isRequire, education_sectorId, course_yearId } = body as {
+    const { code, name, credit, language, isRequire, education_sectorId, course_yearId } = body as {
+      code?: string;
       name?: string;
       credit?: number;
       language?: string;
@@ -88,6 +89,7 @@ export async function POST(req: Request) {
 
     const newSubject = await db.subject.create({
       data: {
+        code,
         name,
         credit,
         language,

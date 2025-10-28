@@ -1,6 +1,10 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { Box, Button, capitalize, Checkbox, FormControl, FormGroup, InputLabel, Menu, MenuItem, Select, Table, TableBody, TableCell, TableContainer, TableHead, TablePagination, TableRow, TextField } from "@mui/material";
+import { Box, Button, Checkbox, Table, TableBody, TableCell, TableContainer, TableHead, TablePagination, TableRow } from "@mui/material";
 import { Subject } from "@/lib/types/subject";
+import SearchControls from "./SearchControls/index";
+import SearchControlsMobile from "./SearchControlsMobile/index";
+import SubjectRow from "./SubjectRow/index";
+import type { SearchKey } from "@/lib/types/subject-search";
 
 type Props = {
     subjects: Subject[] | null;
@@ -19,20 +23,18 @@ const SubjectTable: React.FC<Props> = ({ subjects, loading = false }) => {
     const [selected, setSelected] = useState<number[]>([]);
 
     // Search state
-    const [searchKey, setSearchKey] = useState<"id" | "name" | "credit" | "language">("name");
+    const [searchKey, setSearchKey] = useState<SearchKey>("code");
     const [searchQuery, setSearchQuery] = useState("");
-
-    // Mobile dropdown (menu) anchor
-    const [menuAnchor, setMenuAnchor] = useState<null | HTMLElement>(null);
-    const openMenu = Boolean(menuAnchor);
-    const handleOpenMenu = (e: React.MouseEvent<HTMLButtonElement>) => setMenuAnchor(e.currentTarget);
-    const handleCloseMenu = () => setMenuAnchor(null);
 
     // Derived: filtered subjects by current search
     const filteredSubjects = useMemo(() => {
         if (!searchQuery.trim()) return safeSubjects;
         const q = searchQuery.trim().toLowerCase();
         return safeSubjects.filter((s) => {
+            if (searchKey === "code") {
+                const codeStr = (s.code ?? "").toLowerCase();
+                return codeStr.includes(q);
+            }
             if (searchKey === "name") {
                 return (s.name ?? "").toLowerCase().includes(q);
             }
@@ -40,13 +42,9 @@ const SubjectTable: React.FC<Props> = ({ subjects, loading = false }) => {
                 const creditStr = s.credit != null ? String(s.credit) : "";
                 return creditStr.includes(q);
             }
-            if (searchKey === "language") {
-                const langStr = typeof s.language === "string" ? s.language : "";
-                return langStr.toLowerCase().includes(q);
-            }
-            // searchKey === "id" (ใช้เป็นรหัสวิชา)
-            const idStr = s.id != null ? String(s.id) : "";
-            return idStr.includes(q);
+            // searchKey === "language"
+            const langStr = typeof s.language === "string" ? s.language : "";
+            return langStr.toLowerCase().includes(q);
         });
     }, [safeSubjects, searchKey, searchQuery]);
 
@@ -105,63 +103,22 @@ const SubjectTable: React.FC<Props> = ({ subjects, loading = false }) => {
     return (
         <>
             <Box sx={{ pt: 1, pb: 2, display: "flex", flexDirection: { xs: 'column', md: 'row' }, gap: 2, justifyContent: { sx: 'flex-start', md: 'flex-end' } }}>
-                {/* Desktop/tablet search controls */}
-                <FormGroup sx={{ display: { xs: 'none', md: 'flex' }, flexDirection: "row", alignItems: 'center', gap: 1 }}>
-                    <FormControl size="small" sx={{ minWidth: 160 }}>
-                        <InputLabel id="search-key-label">ค้นหาด้วย</InputLabel>
-                        <Select
-                            labelId="search-key-label"
-                            label="ค้นหาด้วย"
-                            value={searchKey}
-                            onChange={(e) => setSearchKey(e.target.value as "id" | "name" | "credit" | "language")}
-                        >
-                            <MenuItem value="id">รหัสวิชา</MenuItem>
-                            <MenuItem value="name">ชื่อวิชา</MenuItem>
-                            <MenuItem value="credit">หน่วยกิต</MenuItem>
-                            <MenuItem value="language">ภาษาที่ใช้สอน</MenuItem>
-                        </Select>
-                    </FormControl>
-                    <TextField
-                        size="small"
-                        label={searchKey === 'id' ? 'ค้นหาด้วยรหัสวิชา' : searchKey === 'name' ? 'ค้นหาด้วยชื่อวิชา' : searchKey === 'credit' ? 'ค้นหาด้วยหน่วยกิต' : 'ค้นหาด้วยภาษาที่ใช้สอน'}
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                    />
-                    <Button variant="contained" onClick={() => setPage(0)}>ค้นหา</Button>
-                </FormGroup>
+                <SearchControls
+                    searchKey={searchKey}
+                    onChangeSearchKey={setSearchKey}
+                    searchQuery={searchQuery}
+                    onChangeSearchQuery={setSearchQuery}
+                    onApply={() => setPage(0)}
+                />
 
-                {/* Mobile: collapse into a dropdown menu to hide search controls */}
-                <Box sx={{ display: { xs: 'flex', md: 'none' }, gap: 1 }}>
-                    <Button variant="outlined" onClick={handleOpenMenu} fullWidth>ค้นหา</Button>
-                    <Menu anchorEl={menuAnchor} open={openMenu} onClose={handleCloseMenu} keepMounted>
-                        <Box sx={{ p: 2, display: 'flex', flexDirection: 'column', gap: 1, minWidth: 260 }}>
-                            <FormControl size="small">
-                                <InputLabel id="mobile-search-key-label">ค้นหาด้วย</InputLabel>
-                                <Select
-                                    labelId="mobile-search-key-label"
-                                    label="ค้นหาด้วย"
-                                    value={searchKey}
-                                    onChange={(e) => setSearchKey(e.target.value as "id" | "name" | "credit" | "language")}
-                                >
-                                    <MenuItem value="id">รหัสวิชา</MenuItem>
-                                    <MenuItem value="name">ชื่อวิชา</MenuItem>
-                                    <MenuItem value="credit">หน่วยกิต</MenuItem>
-                                    <MenuItem value="language">ภาษาที่ใช้สอน</MenuItem>
-                                </Select>
-                            </FormControl>
-                            <TextField
-                                size="small"
-                                label={searchKey === 'id' ? 'ค้นหาด้วยรหัสวิชา' : searchKey === 'name' ? 'ค้นหาด้วยชื่อวิชา' : searchKey === 'credit' ? 'ค้นหาด้วยหน่วยกิต' : 'ค้นหาด้วยภาษาที่ใช้สอน'}
-                                value={searchQuery}
-                                onChange={(e) => setSearchQuery(e.target.value)}
-                            />
-                            <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1 }}>
-                                <Button onClick={() => { setSearchQuery(""); setPage(0); }}>ล้าง</Button>
-                                <Button variant="contained" onClick={() => { setPage(0); handleCloseMenu(); }}>ใช้</Button>
-                            </Box>
-                        </Box>
-                    </Menu>
-                </Box>
+                <SearchControlsMobile
+                    searchKey={searchKey}
+                    onChangeSearchKey={setSearchKey}
+                    searchQuery={searchQuery}
+                    onChangeSearchQuery={setSearchQuery}
+                    onApply={() => setPage(0)}
+                    onClear={() => { setSearchQuery(""); setPage(0); }}
+                />
 
                 <Button variant="outlined">เพิ่มวิชา</Button>
                 <Button variant="outlined" color="error" disabled={selected.length === 0 || loading} onClick={() => alert(`ลบวิชา ${selected.join(", ")}`)}>ลบวิชาที่เลือก ({selected.length})</Button>
@@ -179,6 +136,7 @@ const SubjectTable: React.FC<Props> = ({ subjects, loading = false }) => {
                                     inputProps={{ "aria-label": "select all on page" }}
                                 />
                             </TableCell>
+                            <TableCell>รหัสวิชา</TableCell>
                             <TableCell>ชื่อวิชา</TableCell>
                             <TableCell>หน่วยกิต</TableCell>
                             <TableCell>สอนด้วยภาษา</TableCell>
@@ -189,38 +147,27 @@ const SubjectTable: React.FC<Props> = ({ subjects, loading = false }) => {
                             if (loading) {
                                 return (
                                     <TableRow>
-                                        <TableCell colSpan={4} align="center">กำลังโหลด...</TableCell>
+                                        <TableCell colSpan={5} align="center">กำลังโหลด...</TableCell>
                                     </TableRow>
                                 );
                             }
                             if (!subjects || safeSubjects.length === 0) {
                                 return (
                                     <TableRow>
-                                        <TableCell colSpan={4} align="center">ไม่มีข้อมูลวิชา</TableCell>
+                                        <TableCell colSpan={5} align="center">ไม่มีข้อมูลวิชา</TableCell>
                                     </TableRow>
                                 );
                             }
                             return pageRows.map((subject) => {
                                 const checked = isSelected(subject.id);
                                 return (
-                                    <TableRow
+                                    <SubjectRow
                                         key={subject.id}
-                                        hover
-                                        role="checkbox"
-                                        aria-checked={checked}
-                                        selected={checked}
-                                    >
-                                        <TableCell padding="checkbox">
-                                            <Checkbox
-                                                checked={checked}
-                                                onChange={() => handleRowToggle(subject.id)}
-                                                disabled={loading}
-                                            />
-                                        </TableCell>
-                                        <TableCell>{subject.name ?? '-'}</TableCell>
-                                        <TableCell>{subject.credit ?? '-'}</TableCell>
-                                        <TableCell>{capitalize((subject.language as string) ?? '-') }</TableCell>
-                                    </TableRow>
+                                        subject={subject}
+                                        checked={checked}
+                                        disabled={loading}
+                                        onToggle={() => handleRowToggle(subject.id)}
+                                    />
                                 );
                             });
                         })()}

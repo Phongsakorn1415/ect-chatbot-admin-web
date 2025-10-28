@@ -9,12 +9,13 @@ export async function PATCH(
 ) {
     try {
         const body = await req.json();
-        const { name, credit, language, isRequire, education_sectorId, course_yearId } = body;
+        const { code, name, credit, language, isRequire, education_sectorId, course_yearId } = body;
         const { id } = await params;
 
         const updatedSubject = await db.subject.update({
             where: { id: Number(id) },
             data: {
+                code,
                 name,
                 credit,
                 language,
