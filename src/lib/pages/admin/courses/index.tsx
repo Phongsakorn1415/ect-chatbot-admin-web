@@ -193,6 +193,7 @@ const CoursesPage = () => {
         />
         <SubjectSection 
           courseYearId={currentCourseYearID}
+          courseYearYear={currentCourseYearID ? courseYear.find(cy => cy.id === currentCourseYearID)?.year ?? null : null}
         />
       </Box>
       <Backdrop

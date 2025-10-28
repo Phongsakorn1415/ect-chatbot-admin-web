@@ -33,3 +33,23 @@ export async function PATCH(
         return NextResponse.json({ error: "Failed to update subject" }, { status: 500 });
     }
 }
+
+//DELETE /api/course/subject/[id]
+// Delete a specific subject
+export async function DELETE(
+    req: Request,
+    { params }: { params: Promise<{ id: string }> }
+){
+    try{
+        const { id } = await params;
+        await db.subject.delete({
+            where: { id: Number(id) },
+        });
+        return NextResponse.json({
+            Message: "Subject deleted successfully"
+        });
+    } catch (error) {
+        console.error("Error deleting subject:", error);
+        return NextResponse.json({ error: "Failed to delete subject" }, { status: 500 });
+    }
+}

@@ -5,13 +5,24 @@ import SearchControls from "./SearchControls/index";
 import SearchControlsMobile from "./SearchControlsMobile/index";
 import SubjectRow from "./SubjectRow/index";
 import type { SearchKey } from "@/lib/types/subject-search";
+import type { educationSector } from "@/lib/types/course-year";
+import AddSubjectModal from "./addSubjectModal";
+
+type AddContext =
+    | { type: 'sector'; sector: educationSector }
+    | { type: 'elective'; courseYearId: number | null };
 
 type Props = {
     subjects: Subject[] | null;
     loading?: boolean;
+    context: AddContext;
+    sectors?: educationSector[];
+    courseYearId?: number | null;
+    courseYearYear?: number | null;
+    onAdded?: () => void;
 };
 
-const SubjectTable: React.FC<Props> = ({ subjects, loading = false }) => {
+const SubjectTable: React.FC<Props> = ({ subjects, loading = false, context, sectors = [], courseYearId = null, courseYearYear = null, onAdded }) => {
     // Local data safety
     const safeSubjects: Subject[] = subjects ?? [];
 
@@ -21,6 +32,9 @@ const SubjectTable: React.FC<Props> = ({ subjects, loading = false }) => {
 
     // Selection state (store selected subject ids)
     const [selected, setSelected] = useState<number[]>([]);
+
+    // Modal state
+    const [openAdd, setOpenAdd] = useState(false);
 
     // Search state
     const [searchKey, setSearchKey] = useState<SearchKey>("code");
@@ -89,6 +103,28 @@ const SubjectTable: React.FC<Props> = ({ subjects, loading = false }) => {
         setSelected((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
     };
 
+    const handleDeleteSelectedSubject = async () => {
+        if (selected.length === 0) return;
+        const confirm = window.confirm("คุณแน่ใจหรือไม่ว่าต้องการลบวิชาที่เลือก?");
+        if (!confirm) return;
+
+        try {
+            await Promise.all(
+                selected.map(async (id) => {
+                    const res = await fetch(`/api/course/subject/${id}`, { method: "DELETE" });
+                    if (!res.ok) {
+                        const msg = await res.text();
+                        throw new Error(msg || `Failed to delete subject ${id}`);
+                    }
+                })
+            );
+            setSelected([]);
+            onAdded?.(); // trigger refresh upstream
+        } catch (error) {
+            console.error("Error deleting subjects:", error);
+        }
+    }
+
     const numSelectedOnPage = pageRows.filter((r) => isSelected(r.id)).length;
     const rowCountOnPage = pageRows.length;
     const allSelectedOnPage = rowCountOnPage > 0 && numSelectedOnPage === rowCountOnPage;
@@ -120,8 +156,8 @@ const SubjectTable: React.FC<Props> = ({ subjects, loading = false }) => {
                     onClear={() => { setSearchQuery(""); setPage(0); }}
                 />
 
-                <Button variant="outlined">เพิ่มวิชา</Button>
-                <Button variant="outlined" color="error" disabled={selected.length === 0 || loading} onClick={() => alert(`ลบวิชา ${selected.join(", ")}`)}>ลบวิชาที่เลือก ({selected.length})</Button>
+                <Button variant="outlined" onClick={() => setOpenAdd(true)}>เพิ่มวิชา</Button>
+                <Button variant="outlined" color="error" disabled={selected.length === 0 || loading} onClick={handleDeleteSelectedSubject}>ลบวิชาที่เลือก ({selected.length})</Button>
             </Box>
             <TableContainer>
                 <Table stickyHeader>
@@ -184,6 +220,20 @@ const SubjectTable: React.FC<Props> = ({ subjects, loading = false }) => {
                 onRowsPerPageChange={handleChangeRowsPerPage}
                 rowsPerPageOptions={[5, 10, 20, 50]}
                 labelRowsPerPage="จำนวนวิชาต่อหน้า"
+            />
+
+            {/* Add Subject Modal */}
+            <AddSubjectModal
+                open={openAdd}
+                onClose={() => setOpenAdd(false)}
+                context={context}
+                sectors={sectors}
+                courseYearId={courseYearId}
+                courseYearYear={courseYearYear}
+                onAdded={() => {
+                    setOpenAdd(false);
+                    onAdded?.();
+                }}
             />
         </>
     );

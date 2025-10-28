@@ -66,7 +66,7 @@ function a11yProps(index: number) {
 
 // Using shared Subject type from src/lib/types/subject
 
-const SubjectSection: React.FC<{ courseYearId: number | null }> = ({ courseYearId }) => {
+const SubjectSection: React.FC<{ courseYearId: number | null, courseYearYear?: number | null }> = ({ courseYearId, courseYearYear = null }) => {
     const [value, setValue] = React.useState(0);
     const [allSemesters, setAllSemesters] = React.useState<educationSector[]>([]);
     const [subjectsMap, setSubjectsMap] = React.useState<Record<number, Subject[]>>({});
@@ -372,7 +372,15 @@ const SubjectSection: React.FC<{ courseYearId: number | null }> = ({ courseYearI
                             </Typography>
 
                             <Box sx={{ width: '100%', overflow: 'hidden' }}>
-                                <SubjectTable subjects={subjectsMap[sector.id] ?? null} loading={subjectsLoading[sector.id] ?? false} />
+                                <SubjectTable
+                                    subjects={subjectsMap[sector.id] ?? null}
+                                    loading={subjectsLoading[sector.id] ?? false}
+                                    context={{ type: 'sector', sector }}
+                                    sectors={allSemesters}
+                                    courseYearId={courseYearId ?? null}
+                                    courseYearYear={courseYearYear}
+                                    onAdded={async () => { await fetchCourseYearSubjects(); }}
+                                />
                             </Box>
 
                         </CustomTabPanel>
@@ -384,7 +392,15 @@ const SubjectSection: React.FC<{ courseYearId: number | null }> = ({ courseYearI
                         รายการวิชาเลือก
                     </Typography>
                     <Box sx={{ width: '100%', overflow: 'hidden' }}>
-                        <SubjectTable subjects={electiveSubjects ?? null} loading={electiveLoading} />
+                        <SubjectTable
+                            subjects={electiveSubjects ?? null}
+                            loading={electiveLoading}
+                            context={{ type: 'elective', courseYearId: courseYearId ?? null }}
+                            sectors={allSemesters}
+                            courseYearId={courseYearId ?? null}
+                            courseYearYear={courseYearYear}
+                            onAdded={async () => { await fetchCourseYearSubjects(); }}
+                        />
                     </Box>
                 </CustomTabPanel>
             </Box>
