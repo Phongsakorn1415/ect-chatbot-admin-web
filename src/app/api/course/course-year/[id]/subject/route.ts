@@ -5,9 +5,10 @@ import { db } from '@/lib/database';
 // Get all subjects in a specific course year
 export async function GET(
     request: Request,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
-    const courseYearId = Number(params.id);
+    const { id } = await params;
+    const courseYearId = Number(id);
 
     if (Number.isNaN(courseYearId)) {
         return NextResponse.json({ error: 'Invalid course year id' }, { status: 400 });
