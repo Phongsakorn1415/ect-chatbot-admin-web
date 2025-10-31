@@ -7,7 +7,9 @@ import MailOutlineRoundedIcon from '@mui/icons-material/MailOutlineRounded';
 import useBreakPointResolution from '@/lib/services/BreakPointResolusion'
 
 import AccountsTable from '@/lib/components/pageComponent/accounts/accountsTable'
+import InviteTable from '@/lib/components/pageComponent/accounts/invateTable'
 import { TableAccountProps } from '@/lib/types/accounts';
+import { TableInvitationsProps } from '@/lib/types/invitations';
 import InviteModal from '@/lib/components/pageComponent/accounts/inviteModal'
 import CustomAlert from '@/lib/components/customAlert'
 
@@ -51,24 +53,35 @@ const AccountsPage = () => {
   } | null>(null);
 
   const [accountsData, setAccountsData] = React.useState<TableAccountProps[]>([]);
+  const [invitesData, setInvitesData] = React.useState<TableInvitationsProps[]>([]);
 
   const handleChangeTab = (event: React.SyntheticEvent, newValue: number) => {
     setTab(newValue);
   };
 
   useEffect(() => {
-    const fetchData = async () => {
+    const fetchAccounts = async () => {
       try {
         const response = await fetch('/api/accounts');
         const data = await response.json();
-        console.log(data);
         setAccountsData(data);
       } catch (error) {
         console.error('Error fetching accounts:', error);
       }
     };
 
-    fetchData();
+    fetchAccounts();
+    refreshInvites();
+  }, []);
+
+  const refreshInvites = React.useCallback(async () => {
+    try {
+      const res = await fetch('/api/invite');
+      const invites = await res.json();
+      setInvitesData(invites);
+    } catch (error) {
+      console.error('Error fetching invites:', error);
+    }
   }, []);
 
   useEffect(() => {
@@ -105,7 +118,7 @@ const AccountsPage = () => {
           />
         </CustomTabPanel>
         <CustomTabPanel value={tab} index={1}>
-          Item Two
+          <InviteTable data={invitesData} onRefresh={refreshInvites} />
         </CustomTabPanel>
       </Box>
 
@@ -115,6 +128,8 @@ const AccountsPage = () => {
         onInvited={() => {
           // switch to the invites tab on success
           setTab(1);
+          // refresh invite data when a new invite is created
+          refreshInvites();
         }}
         onNotify={(message, severity) => setAlert({ message, severity })}
       />
