@@ -32,10 +32,10 @@ const getSearchLabel = (key: AccountSearchKey) => {
       return 'ค้นหาด้วยชื่อ';
     case 'lastName':
       return 'ค้นหาด้วยนามสกุล';
-    case 'role':
-      return 'ค้นหาด้วย Role';
     case 'title':
       return 'ค้นหาด้วยคำนำหน้า';
+    case 'email':
+      return 'ค้นหาด้วยอีเมล';
     default:
       return 'ค้นหา';
   }
@@ -109,7 +109,7 @@ const AccountSearchControls: React.FC<Props> = ({
               <MenuItem value="firstName">ชื่อ</MenuItem>
               <MenuItem value="lastName">นามสกุล</MenuItem>
               <MenuItem value="title">คำนำหน้า</MenuItem>
-              <MenuItem value="role">Role</MenuItem>
+              <MenuItem value="email">Email</MenuItem>
             </Select>
           </FormControl>
 
@@ -155,7 +155,7 @@ const AccountSearchControls: React.FC<Props> = ({
                 <MenuItem value="firstName">ชื่อ</MenuItem>
                 <MenuItem value="lastName">นามสกุล</MenuItem>
                 <MenuItem value="title">คำนำหน้า</MenuItem>
-                <MenuItem value="role">Role</MenuItem>
+                <MenuItem value="email">Email</MenuItem>
               </Select>
             </FormControl>
 

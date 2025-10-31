@@ -213,6 +213,7 @@ const AccountsTable = ({ data }: { data: TableAccountProps[] }) => {
                             <TableCell>คำนำหน้า</TableCell>
                             <TableCell>ชื่อ</TableCell>
                             <TableCell>นามสกุล</TableCell>
+                            <TableCell>อีเมล</TableCell>
                             <TableCell>Role</TableCell>
                             <TableCell>เข้าร่วมเมื่อ</TableCell>
                         </TableRow>
@@ -229,7 +230,7 @@ const AccountsTable = ({ data }: { data: TableAccountProps[] }) => {
                         ))}
                         {paginatedData.length === 0 && (
                             <TableRow>
-                                <TableCell colSpan={6} align="center" sx={{ py: 3 }}>
+                                <TableCell colSpan={7} align="center" sx={{ py: 3 }}>
                                     ไม่พบข้อมูลที่ตรงกับเงื่อนไขการค้นหา
                                 </TableCell>
                             </TableRow>

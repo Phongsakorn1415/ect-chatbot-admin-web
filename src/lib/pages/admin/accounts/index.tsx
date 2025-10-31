@@ -8,6 +8,8 @@ import useBreakPointResolution from '@/lib/services/BreakPointResolusion'
 
 import AccountsTable from '@/lib/components/pageComponent/accounts/accountsTable'
 import { TableAccountProps } from '@/lib/types/accounts';
+import InviteModal from '@/lib/components/pageComponent/accounts/inviteModal'
+import CustomAlert from '@/lib/components/customAlert'
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -42,6 +44,11 @@ function a11yProps(index: number) {
 const AccountsPage = () => {
   const isMobile = useBreakPointResolution()
   const [tab, setTab] = React.useState(0);
+  const [inviteOpen, setInviteOpen] = React.useState(false);
+  const [alert, setAlert] = React.useState<{
+    message: string;
+    severity: 'error' | 'warning' | 'info' | 'success';
+  } | null>(null);
 
   const [accountsData, setAccountsData] = React.useState<TableAccountProps[]>([]);
 
@@ -64,12 +71,26 @@ const AccountsPage = () => {
     fetchData();
   }, []);
 
+  useEffect(() => {
+    if (!alert) return;
+    const t = setTimeout(() => setAlert(null), 3000);
+    return () => clearTimeout(t);
+  }, [alert]);
+
   return (
     <>
       <Box sx={{ p: {xs: 1, md: 3} }}>
         <Box sx={{ display: { xs: 'block', sm: 'flex' }, justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
           <Typography variant="h4">จัดการบัญชี</Typography>
-          <Button variant="contained" size='large' color="primary" sx={{ gap: 1 }}><MailOutlineRoundedIcon /> เพิ่มบัญชี</Button>
+          <Button
+            variant="contained"
+            size='large'
+            color="primary"
+            sx={{ gap: 1 }}
+            onClick={() => setInviteOpen(true)}
+          >
+            <MailOutlineRoundedIcon /> เพิ่มบัญชี
+          </Button>
         </Box>
 
         <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
@@ -87,6 +108,20 @@ const AccountsPage = () => {
           Item Two
         </CustomTabPanel>
       </Box>
+
+      <InviteModal
+        open={inviteOpen}
+        onClose={() => setInviteOpen(false)}
+        onInvited={() => {
+          // switch to the invites tab on success
+          setTab(1);
+        }}
+        onNotify={(message, severity) => setAlert({ message, severity })}
+      />
+
+      {alert && (
+        <CustomAlert message={alert.message} severity={alert.severity} />
+      )}
     </>
   )
 }

@@ -1,6 +1,6 @@
 import { Dayjs } from 'dayjs';
 
-export type AccountSearchKey = 'firstName' | 'lastName' | 'role' | 'title';
+export type AccountSearchKey = 'firstName' | 'lastName' | 'title' | 'email';
 
 export interface AccountSearchFilters {
   searchKey: AccountSearchKey;

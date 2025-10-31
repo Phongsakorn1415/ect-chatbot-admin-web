@@ -5,18 +5,19 @@ import { NextResponse } from "next/server";
 // get all accounts
 export async function GET() {
   try {
-    const accounts = await db.user.findMany(
-        {
-            select: {
-                id: true,
-                title: true,
-                firstName: true,
-                lastName: true,
-                role: true,
-                createdAt: true,
-            }
-        }
-    );
+  const accounts = await db.user.findMany(
+    {
+      select: {
+        id: true,
+        title: true,
+        firstName: true,
+        lastName: true,
+        email: true,
+        role: true,
+        createdAt: true,
+      }
+    }
+  );
     return NextResponse.json(accounts, { status: 200 });
   }catch (error) {
     return NextResponse.json({ message: "Internal Server Error" }, { status: 500 });

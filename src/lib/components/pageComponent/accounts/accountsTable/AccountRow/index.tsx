@@ -47,6 +47,7 @@ const AccountRow = ({ account, isSelected, onSelectRow, loading = false }: Accou
             <TableCell>{account.title}</TableCell>
             <TableCell>{account.firstName}</TableCell>
             <TableCell>{account.lastName}</TableCell>
+            <TableCell>{account.email}</TableCell>
             <TableCell>{account.role}</TableCell>
             <TableCell>{formatDate(account.createdAt)}</TableCell>
         </TableRow>
