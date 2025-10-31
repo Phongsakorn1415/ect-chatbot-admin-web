@@ -34,9 +34,9 @@ model Invite {
   title       String?
   firstName   String?
   lastName    String?
+  role        Role         @default(TEACHER)
   status      InviteStatus @default(PENDING)
   token       String       @unique
-  link        String
   invitedById Int
   invitedBy   User         @relation("UserInvites", fields: [invitedById], references: [id])
   createdAt   DateTime     @default(now())

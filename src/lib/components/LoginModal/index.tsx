@@ -63,6 +63,7 @@ const LoginModal: React.FC<LoginModalProps> = ({ open, onClose }) => {
             }}
             aria-labelledby="login-modal"
             aria-describedby="login-modal-description"
+            sx={{ color: 'text.primary' }}
         >
             <Box
                 sx={{
