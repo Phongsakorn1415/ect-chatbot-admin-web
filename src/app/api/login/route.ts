@@ -9,7 +9,7 @@ export async function POST(req: Request) {
         const { email, password } = body;
 
         // Check if user exists
-        const user = await db.User.findUnique({
+        const user = await db.user.findUnique({
             where: {
                 email: email
             }
@@ -17,7 +17,10 @@ export async function POST(req: Request) {
         if (!user) {
             return NextResponse.json({ message: "User not found" }, { status: 404 });
         }
-        // Check if password matches
+        // Check if password is set and matches
+        if (!user.passwordHash) {
+            return NextResponse.json({ message: "Invalid password" }, { status: 401 });
+        }
         const passwordMatch = await bcrypt.compare(password, user.passwordHash);
         if (!passwordMatch) {
             return NextResponse.json({ message: "Invalid password" }, { status: 401 });

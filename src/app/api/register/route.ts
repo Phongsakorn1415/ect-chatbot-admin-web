@@ -8,7 +8,7 @@ export async function POST(req: Request) {
         const { email, password, title, firstName, lastName, role } = body;
 
         // Check if user exists
-        const existingUser = await db.User.findUnique({
+        const existingUser = await db.user.findUnique({
             where: {
                 email: email
             }
@@ -20,7 +20,7 @@ export async function POST(req: Request) {
         const saltRounds = 10;
         const passwordHash = await bcrypt.hash(password, saltRounds);
         // Create user
-        const newUser = await db.User.create({
+        const newUser = await db.user.create({
             data: {
                 email: email,
                 passwordHash: passwordHash,

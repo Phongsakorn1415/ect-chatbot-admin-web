@@ -17,7 +17,8 @@ const createCheckBoxOverrides = (theme: Theme) => ({
 
 				// Disabled state
 				'&.Mui-disabled': {
-					color: theme.palette.action.disabled,
+					// color: theme.palette.action.disabled,
+					color: theme.palette.grey[300],
 				},
 			},
 		},

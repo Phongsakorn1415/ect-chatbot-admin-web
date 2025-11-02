@@ -220,6 +220,19 @@ const SubjectTable: React.FC<Props> = ({ subjects, loading = false, context, sec
                 onRowsPerPageChange={handleChangeRowsPerPage}
                 rowsPerPageOptions={[5, 10, 20, 50]}
                 labelRowsPerPage="จำนวนวิชาต่อหน้า"
+                sx={{
+                    borderTop: 1,
+                    borderColor: 'divider',
+                    '& .MuiTablePagination-toolbar': {
+                        flexWrap: 'wrap',
+                        justifyContent: { xs: 'center', md: 'flex-end' },
+                        gap: { xs: 0, md: 1 },
+                        overflowX: 'auto',
+                    },
+                    '& .MuiTablePagination-selectLabel, & .MuiTablePagination-displayedRows': {
+                        fontSize: '0.875rem'
+                    }
+                }}
             />
 
             {/* Add Subject Modal */}
