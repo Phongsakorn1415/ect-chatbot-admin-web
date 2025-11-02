@@ -34,6 +34,7 @@ export async function GET(request: Request) {
 }
 
 //POST /api/invite/accept
+//register user with invite token
 export async function POST(request: Request) {
   try {
     const body = await request.json();
