@@ -1,5 +1,6 @@
 import { db } from "@/lib/database";
 import { NextResponse } from "next/server";
+import bcrypt from "bcrypt";
 
 //GET /api/invite/accept?token=xxxx
 export async function GET(request: Request) {
@@ -24,7 +25,18 @@ export async function GET(request: Request) {
       );
     }
 
-    return NextResponse.json({ message: "Invite accepted" });
+    // include status so client can handle expired/accepted states gracefully
+    const isExpired = invite.status === "EXPIRED";
+    return NextResponse.json({
+      message: "Invite fetched",
+      invite: {
+        title: invite.title || null,
+        firstName: invite.firstName || null,
+        lastName: invite.lastName || null,
+        status: invite.status,
+        expired: isExpired,
+      },
+    });
   } catch (error) {
     return NextResponse.json(
       { error: "Internal Server Error" },
@@ -47,6 +59,20 @@ export async function POST(request: Request) {
       return NextResponse.json(
         { error: "Invalid invite token" },
         { status: 404 }
+      );
+    }
+
+    // Validate invite status
+    if (invite.status === "EXPIRED") {
+      return NextResponse.json(
+        { error: "Invite token has expired" },
+        { status: 410 }
+      );
+    }
+    if (invite.status === "ACCEPTED") {
+      return NextResponse.json(
+        { error: "Invite has already been used" },
+        { status: 409 }
       );
     }
 
@@ -89,16 +115,25 @@ export async function POST(request: Request) {
       );
     }
 
+    const saltRounds = 10;
+    const passwordHash = await bcrypt.hash(password, saltRounds);
+
     // Create the user account
     const newUser = await db.user.create({
       data: {
         email: invite.email,
-        passwordHash: password,
+        passwordHash: passwordHash,
         title: title || invite.title,
         firstName : firstName || invite.firstName,
         lastName: lastName || invite.lastName,
         role: invite.role,
       },
+    });
+
+    //update invite status to accepted
+    await db.invite.update({
+      where: { token },
+      data: { status: "ACCEPTED" },
     });
 
     return NextResponse.json({ message: "Invite accepted" });

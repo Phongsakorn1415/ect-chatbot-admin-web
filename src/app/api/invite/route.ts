@@ -232,6 +232,8 @@ export async function PUT(request: Request) {
   }
 }
 
+// POST /api/invite
+// create a new invite
 export async function POST(req: Request) {
   try {
     const body = await req.json();
@@ -335,9 +337,7 @@ export async function POST(req: Request) {
 
     // Send invitation email (best-effort)
     try {
-      const fromAddress = (process.env.EMAIL_FROM ||
-        process.env.EMAIL_USER ||
-        "no-reply@example.com") as string;
+      const fromAddress = (process.env.EMAIL_FROM || process.env.EMAIL_USER || "no-reply@example.com") as string;
       const fullName = [title, firstName, lastName].filter(Boolean).join(" ");
       const subject =
         "คุณได้รับเชิญให้เข้าร่วมใช้งานเว็บจัดการข้อมูล ECT Chatbot";
