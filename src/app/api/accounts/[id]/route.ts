@@ -11,17 +11,19 @@ export async function GET(request: Request, { params }: { params: { id: string }
             where: { id: Number(id) },
             select: {
                 id: true,
+                email: true,
                 title: true,
                 firstName: true,
                 lastName: true,
                 role: true,
                 createdAt: true,
+                updatedAt: true,
             }
         });
         if (!account) {
             return NextResponse.json({ message: "User not found" }, { status: 404 });
         }
-        return NextResponse.json({ account }, { status: 200 });
+        return NextResponse.json({ data: account }, { status: 200 });
     } catch (error) {
         return NextResponse.error();
     }
@@ -33,18 +35,24 @@ export async function PATCH(request: Request, { params }: { params: { id: string
     try {
         const { id } = params;
         const body = await request.json();
-        const { title, firstName, lastName, role, password } = body;
+        const { title, firstName, lastName, role } = body;
 
-        const dataBody: any = {
-            title,
-            firstName,
-            lastName,
-            role,
-        };
+        // Fetch current user to enforce role constraints
+        const current = await db.user.findUnique({
+            where: { id: Number(id) },
+            select: { role: true },
+        });
+        if (!current) {
+            return NextResponse.json({ message: "User not found" }, { status: 404 });
+        }
 
-        if (password) {
-            const hashedPassword = await bcrypt.hash(password, 10);
-            dataBody.hashedPassword = hashedPassword;
+        // Disallow changing role of SUPER_ADMIN
+        if (current.role === 'SUPER_ADMIN' && role && role !== 'SUPER_ADMIN') {
+            return NextResponse.json({ message: 'Cannot change role of SUPER ADMIN' }, { status: 403 });
+        }
+        // Disallow setting any user to SUPER_ADMIN via this endpoint
+        if (current.role !== 'SUPER_ADMIN' && role === 'SUPER_ADMIN') {
+            return NextResponse.json({ message: 'Cannot assign SUPER ADMIN role' }, { status: 403 });
         }
 
         const updatedAccount = await db.user.update({
@@ -53,8 +61,8 @@ export async function PATCH(request: Request, { params }: { params: { id: string
                 title,
                 firstName,
                 lastName,
-                role,
-                passwordHash: dataBody.hashedPassword ?? undefined,
+                // Only update role if allowed per constraints above
+                ...(role ? { role } : {}),
             }
         });
         return NextResponse.json({ message: "User updated successfully", updatedAccount }, { status: 200 });
