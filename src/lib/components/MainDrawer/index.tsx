@@ -36,7 +36,7 @@ const MainDrawer = ({ isOpen, HandleDrawerClose, handleDrawerTransitionEnd }: Ma
     <>
       <Box gap={2}>
         <Paper elevation={0} sx={{ mb: 2, display: { xs: 'block', sm: 'flex' }, justifyContent: 'space-between', alignItems: 'center', textAlign: 'center' }}>
-          <Paper elevation={isMobile ? 2 : 0} sx={{ borderRadius: 2, padding: 0.5, width: '100%', display: { xs: 'block', sm: 'flex' }, alignItems: { xs: 'center', sm: 'flex-start' }, ':hover': { bgcolor: 'action.hover', cursor: 'pointer' } }} onClick={() => handleNavigate('/admin/profile')}>
+          <Paper elevation={isMobile ? 2 : 0} sx={{ borderRadius: 2, padding: 0.5, width: '100%', display: { xs: 'block', sm: 'flex' }, alignItems: { xs: 'center', sm: 'flex-start' }, ':hover': { bgcolor: 'action.hover', cursor: 'pointer' } }} onClick={() => handleNavigate('/admin/myprofile')}>
             <AccountCircleRoundedIcon sx={{ fontSize: 40, color: 'gray' }} />
             <Box sx={{ ml: { xs: 0, sm: 2 } }}>
               <Typography variant='subtitle1' sx={{ fontWeight: 'bold' }}>{session.user?.firstName} {session.user?.lastName}</Typography>
