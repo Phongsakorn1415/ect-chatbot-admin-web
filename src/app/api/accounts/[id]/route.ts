@@ -6,7 +6,7 @@ import bcrypt from "bcrypt";
 // get account by id
 export async function GET(request: Request, { params }: { params: { id: string } }) {
     try {
-        const { id } = params;
+        const { id } = await params;
         const account = await db.user.findUnique({
             where: { id: Number(id) },
             select: {

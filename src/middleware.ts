@@ -48,7 +48,7 @@ export async function middleware(req: any) {
   } else if (
     pathname.startsWith("/admin/accounts") &&
     user &&
-    user.role !== "SUPER_ADMIN"
+    user.role == "TEACHER"
   ) {
     return NextResponse.redirect(new URL("/admin", req.url));
   }

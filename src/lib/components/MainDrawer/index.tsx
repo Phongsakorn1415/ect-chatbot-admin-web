@@ -35,7 +35,7 @@ const MainDrawer = ({ isOpen, HandleDrawerClose, handleDrawerTransitionEnd }: Ma
   const DrawerContent = () => (
     <>
       <Box gap={2}>
-        <Paper elevation={0} sx={{ mb: 2, display: { xs: 'block', sm: 'flex' }, justifyContent: 'space-between', alignItems: 'center', textAlign: 'center' }}>
+        <Paper elevation={0} sx={{ mb: 2, display: { xs: 'block', sm: 'flex' }, justifyContent: 'space-between', alignItems: 'center', textAlign: { xs: 'center', sm: 'left' } }}>
           <Paper elevation={isMobile ? 2 : 0} sx={{ borderRadius: 2, padding: 0.5, width: '100%', display: { xs: 'block', sm: 'flex' }, alignItems: { xs: 'center', sm: 'flex-start' }, ':hover': { bgcolor: 'action.hover', cursor: 'pointer' } }} onClick={() => handleNavigate('/admin/myprofile')}>
             <AccountCircleRoundedIcon sx={{ fontSize: 40, color: 'gray' }} />
             <Box sx={{ ml: { xs: 0, sm: 2 } }}>
@@ -49,7 +49,7 @@ const MainDrawer = ({ isOpen, HandleDrawerClose, handleDrawerTransitionEnd }: Ma
         </Paper>
         <Paper elevation={0} sx={{ ':hover': { bgcolor: 'action.hover', cursor: 'pointer' }, p: 1, borderRadius: 2, display: 'flex', alignItems: 'center' }} onClick={() => handleNavigate('/admin')}>หน้าแรก</Paper>
         <Paper elevation={0} sx={{ ':hover': { bgcolor: 'action.hover', cursor: 'pointer' }, p: 1, borderRadius: 2 }} onClick={() => handleNavigate('/admin/courses')}>หลักสูตร</Paper>
-        {session.user?.role == 'SUPER_ADMIN' && (
+        {session.user?.role !== "TEACHER" && (
           <Paper elevation={0} sx={{ ':hover': { bgcolor: 'action.hover', cursor: 'pointer' }, p: 1, borderRadius: 2 }} onClick={() => handleNavigate('/admin/accounts')}>บัญชีทั้งหมด</Paper>
         )}
       </Box>
