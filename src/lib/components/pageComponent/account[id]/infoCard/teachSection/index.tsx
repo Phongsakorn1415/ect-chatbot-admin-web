@@ -299,6 +299,7 @@ const TeachSection: React.FC<TeachSectionProps> = ({ accountId }) => {
 
   const handleRemoveSelected = async () => {
     if (selectedIds.size === 0) return;
+    if(!confirm(`คุณแน่ใจหรือไม่ว่าต้องการลบวิชาที่เลือก (${selectedIds.size} รายการ) ออกจากรายการวิชาที่สอน? การกระทำนี้ไม่สามารถย้อนกลับได้`)) return;
     const selectedTeachIds = Array.from(selectedIds);
 
     // Group selected rows by course year for proper cache refresh and dialog state sync
