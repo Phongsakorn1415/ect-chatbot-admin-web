@@ -7,7 +7,13 @@ import ContactSection from "./contactSection"
 import TeachSection from "./teachSection"
 import { CustomTabPanel, a11yProps } from "@/lib/components/TabsProvider"
 
-const InfoCard = ({ userRole, contactData }: { userRole: string, contactData?: ContactInfo[] }) => {
+type InfoCardProps = {
+    userRole: string
+    contactData?: ContactInfo[]
+    accountId?: number | string
+}
+
+const InfoCard = ({ userRole, contactData, accountId }: InfoCardProps) => {
     const [TabValue, setTabValue] = useState(0);
 
     return (
@@ -22,11 +28,12 @@ const InfoCard = ({ userRole, contactData }: { userRole: string, contactData?: C
                 <CustomTabPanel value={TabValue} index={0}>
                     <ContactSection
                         contactData={contactData ?? []}
+                        accountId={accountId}
                     />
                 </CustomTabPanel>
                 {userRole === 'TEACHER' && (
                     <CustomTabPanel value={TabValue} index={1}>
-                        <TeachSection />
+                        <TeachSection accountId={typeof accountId === 'string' ? Number(accountId) : accountId} />
                     </CustomTabPanel>
                 )}
             </Paper>

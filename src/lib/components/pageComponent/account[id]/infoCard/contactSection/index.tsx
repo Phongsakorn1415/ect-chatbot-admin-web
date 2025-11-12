@@ -6,7 +6,12 @@ import AddIcon from '@mui/icons-material/Add';
 
 import { ContactInfo, ContactType } from "@/lib/types/contact"
 
-const ContactSection = ({ contactData }: { contactData: ContactInfo[] }) => {
+type ContactSectionProps = {
+    contactData: ContactInfo[]
+    accountId?: string | number
+}
+
+const ContactSection = ({ contactData, accountId: accountIdProp }: ContactSectionProps) => {
     const [allContactTypes, setAllContactTypes] = useState<Array<ContactType>>([]);
     const [isLoading, setIsLoading] = useState<boolean>(true);
 
@@ -26,7 +31,7 @@ const ContactSection = ({ contactData }: { contactData: ContactInfo[] }) => {
 
     // current account id from route
     const params = useParams<{ id: string }>();
-    const accountId = params?.id;
+    const accountId = (accountIdProp ?? params?.id) as string | number | undefined;
 
     useEffect(() => {
         // guard against state updates after unmount

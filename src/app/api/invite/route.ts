@@ -6,6 +6,16 @@ import SendMail from "@/lib/services/NodeMailer";
 // get all invites
 export async function GET() {
   try {
+    // Expire PENDING invites older than 7 days
+    const cutoff = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+    await db.invite.updateMany({
+      where: {
+        status: "PENDING",
+        createdAt: { lt: cutoff },
+      },
+      data: { status: "EXPIRED" as const },
+    });
+
     const invites = await db.invite.findMany({
       select: {
         id: true,

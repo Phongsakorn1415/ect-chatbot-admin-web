@@ -6,11 +6,17 @@ import useBreakPointResolution from '@/lib/services/BreakPointResolusion';
 
 import PersonOffIcon from '@mui/icons-material/PersonOff';
 import CustomAlert from '@/lib/components/customAlert';
+import { useSession } from 'next-auth/react'
 
 const ProfileCard = ({ accountData, isAccountDataLoaded, onSaved }: { accountData: Account | null; isAccountDataLoaded: boolean; onSaved?: (updated: any) => void }) => {
     const { isMobile, isTablet, isDesktop } = useBreakPointResolution();
 
     const [iseditMode, setIsEditMode] = React.useState(false);
+    const { data: session } = useSession();
+    const isSelf = React.useMemo(() => {
+        if (!session?.user?.id || !accountData?.id) return false;
+        return String(session.user.id) === String(accountData.id);
+    }, [session?.user?.id, accountData?.id]);
     const [form, setForm] = React.useState({
         title: '',
         firstName: '',
@@ -66,7 +72,8 @@ const ProfileCard = ({ accountData, isAccountDataLoaded, onSaved }: { accountDat
                     title: form.title,
                     firstName: form.firstName,
                     lastName: form.lastName,
-                    role: form.role,
+                    // Prevent changing own role from UI even if payload is tampered
+                    role: isSelf ? accountData.role : form.role,
                 }),
             });
             if (!res.ok) {
@@ -171,7 +178,9 @@ const ProfileCard = ({ accountData, isAccountDataLoaded, onSaved }: { accountDat
                             <Grid size={{ xs: 12, sm: 6 }}>
                                 <Typography sx={{ mb: 1 }}>role</Typography>
                                 <Tooltip
-                                    title={accountData.role === 'SUPER_ADMIN' ? 'ไม่สามารถเปลี่ยนบทบาทของ SUPER ADMIN ได้' : ''}
+                                    title={accountData.role === 'SUPER_ADMIN' 
+                                        ? 'ไม่สามารถเปลี่ยนบทบาทของ SUPER ADMIN ได้' 
+                                        : (isSelf ? 'ไม่สามารถเปลี่ยนบทบาทของบัญชีของตนเองได้' : '')}
                                     arrow
                                 >
                                     <TextField
@@ -179,7 +188,7 @@ const ProfileCard = ({ accountData, isAccountDataLoaded, onSaved }: { accountDat
                                         value={form.role}
                                         onChange={(e) => setForm((prev) => ({ ...prev, role: e.target.value }))}
                                         fullWidth
-                                        disabled={!iseditMode || accountData.role === 'SUPER_ADMIN'}
+                                        disabled={!iseditMode || accountData.role === 'SUPER_ADMIN' || isSelf}
                                     >
                                         <MenuItem value="TEACHER">TEACHER</MenuItem>
                                         <MenuItem value="ADMIN">ADMIN</MenuItem>
