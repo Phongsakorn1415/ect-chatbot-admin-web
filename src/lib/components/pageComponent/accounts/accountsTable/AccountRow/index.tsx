@@ -1,5 +1,9 @@
+"use client"
+
 import { TableRow, TableCell, Checkbox, Tooltip } from "@mui/material"
 import { TableAccountProps } from "@/lib/types/accounts"
+import { useRouter } from "next/navigation"
+import { useSession } from "next-auth/react"
 
 interface AccountRowProps {
     account: TableAccountProps;
@@ -9,11 +13,24 @@ interface AccountRowProps {
 }
 
 const AccountRow = ({ account, isSelected, onSelectRow, loading = false }: AccountRowProps) => {
+    const router = useRouter();
+    const { data: session } = useSession();
     const isSuperAdmin = account.role === 'SUPER_ADMIN';
     
     const handleSelectRow = (event: React.ChangeEvent<HTMLInputElement>) => {
+        // Prevent row click navigation when interacting with the checkbox
+        event.stopPropagation();
         if (!isSuperAdmin) {
             onSelectRow(account.id);
+        }
+    }
+
+    const handleRowClick = () => {
+        const currentUserId = session?.user?.id;
+        if (currentUserId && currentUserId === account.id) {
+            router.push(`/admin/myprofile`);
+        } else {
+            router.push(`/admin/accounts/${account.id}`);
         }
     }
 
@@ -27,7 +44,14 @@ const AccountRow = ({ account, isSelected, onSelectRow, loading = false }: Accou
     }
 
     return (
-        <TableRow hover role="checkbox" aria-checked={isSelected} selected={isSelected}>
+        <TableRow 
+            hover 
+            role="row" 
+            aria-checked={isSelected} 
+            selected={isSelected}
+            onClick={handleRowClick}
+            sx={{ cursor: 'pointer' }}
+        >
             <TableCell padding="checkbox">
                 <Tooltip 
                     title={isSuperAdmin ? "ไม่สามารถเลือกบัญชีนี้ได้" : ""} 
@@ -38,6 +62,7 @@ const AccountRow = ({ account, isSelected, onSelectRow, loading = false }: Accou
                         <Checkbox
                             checked={isSelected}
                             onChange={handleSelectRow}
+                            onClick={(e) => e.stopPropagation()}
                             disabled={loading || isSuperAdmin}
                             inputProps={{ "aria-labelledby": `account-${account.id}` }}
                         />

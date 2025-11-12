@@ -30,39 +30,7 @@ import { educationSector } from "@/lib/types/course-year";
 import { Subject } from "@/lib/types/subject";
 import SubjectTable from "./subjectTable";
 import CustomAlert from "@/lib/components/customAlert";
-
-type TabPanelProps = {
-    children?: React.ReactNode;
-    index: number;
-    value: number;
-};
-
-function CustomTabPanel(props: TabPanelProps) {
-    const { children, value, index, ...other } = props;
-
-    return (
-        <div
-            role="tabpanel"
-            hidden={value !== index}
-            id={`subject-tabpanel-${index}`}
-            aria-labelledby={`subject-tab-${index}`}
-            {...other}
-        >
-            {value === index && (
-                <Box sx={{ p: 2 }}>
-                    {children}
-                </Box>
-            )}
-        </div>
-    );
-}
-
-function a11yProps(index: number) {
-    return {
-        id: `subject-tab-${index}`,
-        "aria-controls": `subject-tabpanel-${index}`,
-    } as const;
-}
+import { CustomTabPanel, a11yProps } from "@/lib/components/TabsProvider";
 
 // Using shared Subject type from src/lib/types/subject
 

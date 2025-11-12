@@ -1,6 +1,8 @@
 import { db } from "@/lib/database";
 import { NextResponse } from "next/server";
 
+//GET /api/course/course-year
+//Get all course years
 export async function GET(){
     try {
         const courseYears = await db.course_year.findMany({
@@ -18,6 +20,8 @@ export async function GET(){
     }
 }
 
+//POST /api/course/course-year
+//Create a new course year with tuition fees
 export async function POST(req: Request) {
     try {
         const body = await req.json();
