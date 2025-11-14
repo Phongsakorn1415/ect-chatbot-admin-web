@@ -76,6 +76,12 @@ export async function PATCH(request: Request, { params }: { params: { id: string
 export async function DELETE(request: Request, { params }: { params: { id: string } }) {
     try {
         const { id } = params;
+
+        //remove related teach records
+        await db.teach.deleteMany({
+            where: { userId: Number(id) },
+        });
+
         const deletedAccount = await db.user.delete({
             where: { id: Number(id) },
         });
