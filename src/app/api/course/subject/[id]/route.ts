@@ -42,8 +42,28 @@ export async function DELETE(
 ){
     try{
         const { id } = await params;
+        const idNum = Number(id);
+        if (!id || Number.isNaN(idNum)) {
+            return NextResponse.json(
+                { message: "Valid subject ID is required" },
+                { status: 400 }
+            );
+        }
+
+        // Ensure the record exists
+        const existing = await db.subject.findUnique({ where: { id: idNum } });
+        if (!existing) {
+            return NextResponse.json(
+                { message: "Subject not found" },
+                { status: 404 }
+            );
+        }
+
+        // Remove dependent teaching records first
+        await db.teach.deleteMany({ where: { subjectId: idNum } });
+
         await db.subject.delete({
-            where: { id: Number(id) },
+            where: { id: idNum },
         });
         return NextResponse.json({
             Message: "Subject deleted successfully"

@@ -56,8 +56,29 @@ export async function DELETE(
 
         // Remove dependent records first (defensive; Tuition_fees has onDelete: Cascade but keep order safe)
     await db.tuition_fees.deleteMany({ where: { course_yearId: idNum } });
+    
+    // Remove dependent Education_sector records
+    await db.education_sector.deleteMany({ where: { course_yearId: idNum } });
 
-        // Delete the course year
+    // Gather subject IDs under this course year (needed to remove teaching records first)
+    const subjectIds = await db.subject.findMany({
+        where: { course_yearId: idNum },
+        select: { id: true }
+    }).then(subjects => subjects.map(s => s.id));
+
+    // Remove dependent teaching records first
+    if (subjectIds.length > 0) {
+        await db.teach.deleteMany({
+            where: {
+                subjectId: { in: subjectIds }
+            }
+        });
+    }
+
+    // Remove dependent Subject records
+    await db.subject.deleteMany({ where: { course_yearId: idNum } });
+
+    // Delete the course year
     await db.course_year.delete({ where: { id: idNum } });
 
         return NextResponse.json({ message: 'Course year deleted successfully' }, { status: 200 });

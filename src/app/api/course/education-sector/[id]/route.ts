@@ -16,6 +16,25 @@ export async function DELETE(
       );
     }
 
+    // Gather subject IDs under this course sector (needed to remove teaching records first)
+    const subjectIds = await db.subject.findMany({
+        where: { education_sectorId: idNum },
+        select: { id: true }
+    }).then(subjects => subjects.map(s => s.id));
+
+    // Remove dependent teaching records first
+    if (subjectIds.length > 0) {
+        await db.teach.deleteMany({
+            where: {
+                subjectId: { in: subjectIds }
+            }
+        });
+    }
+
+    // Remove dependent Subject records
+    await db.subject.deleteMany({ where: { education_sectorId: idNum } });
+
+    //remove the education sector
     const deletedSector = await db.education_sector.delete({
       where: { id: idNum },
     });
