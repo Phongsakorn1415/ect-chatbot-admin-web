@@ -6,26 +6,30 @@
 
 generator client {
   provider = "prisma-client-js"
+  previewFeatures = ["postgresqlExtensions"]
 }
 
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+  extensions = [pgvector(map: "vector")]
 }
 
 model User {
-  id           Int       @id @unique @default(autoincrement())
-  email        String    @unique
-  title        String?
-  firstName    String?
-  lastName     String?
-  passwordHash String?
-  role         Role      @default(TEACHER)
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
-  invites      Invite[]  @relation("UserInvites")
-  teach        teach[]
-  contact      contact[]
+  id             Int       @id @unique @default(autoincrement())
+  email          String    @unique
+  title          String?
+  firstName      String?
+  lastName       String?
+  passwordHash   String?
+  name_embedding Unsupported("vector(1024)")?
+  role           Role      @default(TEACHER)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  invites        Invite[]  @relation("UserInvites")
+  teach          teach[]
+  contact        contact[]
+
 }
 
 model Invite {
@@ -64,6 +68,14 @@ model Tuition_fees {
   updatedAt      DateTime    @updatedAt
 }
 
+model late_registration_fee {
+  id                  Int      @id @unique @default(autoincrement())
+  rate                Int      @default(0) // ค่าปรับลงทะเบียนช้า (เก็บเป็นตัวเลข)
+  unit                FeeUnit  @default(DAY) // หน่วย (เก็บเป็นตัวเลข)
+  max_amount          Int      @default(0) // จำนวนสูงสุด (เก็บเป็นตัวเลข)
+  updatedAt           DateTime @updatedAt  // เก็บเวลาที่แก้ไขล่าสุด
+}
+
 model Education_sector {
   id             Int          @id @unique @default(autoincrement())
   course_year_id Course_year? @relation(fields: [course_yearId], references: [id])
@@ -79,6 +91,7 @@ model subject {
   id                  Int               @id @unique @default(autoincrement())
   code                String?
   name                String?
+  name_embedding      Unsupported("vector(1024)")?
   credit              Int?
   language            String?
   isRequire           Boolean?
@@ -87,6 +100,9 @@ model subject {
   Course_year_id      Course_year?      @relation(fields: [course_yearId], references: [id])
   course_yearId       Int?
   teach               teach[]
+  prerequisiteId      Int?
+  prerequisite        subject?          @relation("SubjectPrerequisite", fields: [prerequisiteId], references: [id])
+  prerequisiteFor     subject[]         @relation("SubjectPrerequisite")
   createdAt           DateTime          @default(now())
   updatedAt           DateTime          @updatedAt
 
@@ -133,4 +149,10 @@ enum InviteStatus {
 enum PublishStatus {
   DRAFT
   PUBLISHED
+}
+
+enum FeeUnit {
+  DAY
+  WEEK
+  MONTH
 }

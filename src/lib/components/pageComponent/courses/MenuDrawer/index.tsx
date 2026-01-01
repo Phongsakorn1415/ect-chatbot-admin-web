@@ -6,7 +6,9 @@ import ExpandLess from '@mui/icons-material/ExpandLess';
 import ExpandMore from '@mui/icons-material/ExpandMore';
 import PublicOffIcon from '@mui/icons-material/PublicOff';
 import PublicIcon from '@mui/icons-material/Public';
+import WatchLaterIcon from '@mui/icons-material/WatchLater';
 import useBreakPointResolution from '@/lib/services/BreakPointResolusion';
+import Divider from '@mui/material/Divider';
 
 // Page-scoped drawer: overlays on mobile/tablet; reserves space on desktop
 const MenuDrawer: React.FC<PageDrawerProps> = ({ isOpen, drawerWidth, items, showAddButton = false, addButtonText, onAddButtonClick }) => {
@@ -34,9 +36,9 @@ const MenuDrawer: React.FC<PageDrawerProps> = ({ isOpen, drawerWidth, items, sho
         transition: isOverlay
           ? undefined
           : (theme) => theme.transitions.create('width', {
-              easing: theme.transitions.easing.sharp,
-              duration: theme.transitions.duration.standard,
-            }),
+            easing: theme.transitions.easing.sharp,
+            duration: theme.transitions.duration.standard,
+          }),
         '& .MuiDrawer-paper': {
           position: isOverlay ? 'absolute' : 'relative',
           left: 0,
@@ -49,13 +51,13 @@ const MenuDrawer: React.FC<PageDrawerProps> = ({ isOpen, drawerWidth, items, sho
           transform: isOverlay ? `translateX(${isOpen ? 0 : -width}px)` : 'none',
           transition: isOverlay
             ? (theme) => theme.transitions.create('transform', {
-                easing: theme.transitions.easing.sharp,
-                duration: theme.transitions.duration.standard,
-              })
+              easing: theme.transitions.easing.sharp,
+              duration: theme.transitions.duration.standard,
+            })
             : (theme) => theme.transitions.create('width', {
-                easing: theme.transitions.easing.sharp,
-                duration: theme.transitions.duration.standard,
-              }),
+              easing: theme.transitions.easing.sharp,
+              duration: theme.transitions.duration.standard,
+            }),
           borderRight: (theme) => `1px solid ${theme.palette.divider}`,
           zIndex: (theme) => (isOverlay ? theme.zIndex.drawer : 'auto'),
         },
@@ -130,6 +132,15 @@ const MenuDrawer: React.FC<PageDrawerProps> = ({ isOpen, drawerWidth, items, sho
             </ListItemButton>
           </ListItem>
         )}
+      </List>
+      <Divider />
+      <Typography variant="h6" sx={{ pt: 2, pl: 2 }}>อื่น ๆ</Typography>
+      <List>
+        <ListItem>
+          <ListItemButton>
+            <ListItemIcon sx={{ minWidth: 40 }}><WatchLaterIcon /></ListItemIcon>
+            <ListItemText primary="ค่าปรับลงทะเบียนช้า" sx={{ textAlign: 'left' }} />      </ListItemButton>
+        </ListItem>
       </List>
     </Drawer>
   )
