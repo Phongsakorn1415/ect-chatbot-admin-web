@@ -10,8 +10,11 @@ import WatchLaterIcon from '@mui/icons-material/WatchLater';
 import useBreakPointResolution from '@/lib/services/BreakPointResolusion';
 import Divider from '@mui/material/Divider';
 
+import { useRouter } from 'next/navigation';
+
 // Page-scoped drawer: overlays on mobile/tablet; reserves space on desktop
 const MenuDrawer: React.FC<PageDrawerProps> = ({ isOpen, drawerWidth, items, showAddButton = false, addButtonText, onAddButtonClick }) => {
+  const router = useRouter();
   const { isMobile, isTablet } = useBreakPointResolution();
   const isOverlay = isMobile || isTablet;
   const width = drawerWidth;
@@ -137,7 +140,7 @@ const MenuDrawer: React.FC<PageDrawerProps> = ({ isOpen, drawerWidth, items, sho
       <Typography variant="h6" sx={{ pt: 2, pl: 2 }}>อื่น ๆ</Typography>
       <List>
         <ListItem>
-          <ListItemButton>
+          <ListItemButton onClick={() => router.push('/admin/courses/late-fee')}>
             <ListItemIcon sx={{ minWidth: 40 }}><WatchLaterIcon /></ListItemIcon>
             <ListItemText primary="ค่าปรับลงทะเบียนช้า" sx={{ textAlign: 'left' }} />      </ListItemButton>
         </ListItem>
