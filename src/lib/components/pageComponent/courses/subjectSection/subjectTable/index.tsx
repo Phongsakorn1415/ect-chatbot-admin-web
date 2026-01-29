@@ -157,6 +157,7 @@ const SubjectTable: React.FC<Props> = ({ subjects, loading = false, context, sec
                 />
 
                 <Button variant="outlined" onClick={() => setOpenAdd(true)}>เพิ่มวิชา</Button>
+                <Button variant="outlined" color="warning" disabled={selected.length === 0 || loading} onClick={() => console.log(selected)}>แก้ไขวิชา ({selected.length})</Button>
                 <Button variant="outlined" color="error" disabled={selected.length === 0 || loading} onClick={handleDeleteSelectedSubject}>ลบวิชาที่เลือก ({selected.length})</Button>
             </Box>
             <TableContainer>

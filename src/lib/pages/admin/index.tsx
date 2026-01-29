@@ -10,6 +10,8 @@ import { useContext } from 'react'
 import { stat } from 'fs'
 import MenuDrawer from '@/lib/components/pageComponent/courses/MenuDrawer'
 
+import ChatBoxFull from '@/lib/components/ChatBox/Full'
+
 const AdminHomepage = () => {
   const router = useRouter()
   const { data: session, status } = useSession()
@@ -17,28 +19,11 @@ const AdminHomepage = () => {
 
   const user = session?.user as IUser | undefined
 
-  // useEffect(() => {
-  //   if (!session) {
-  //     router.replace('/')
-  //   }
-  // }), [session, status]
-  // if (status === 'loading') return null
-
-  const handleSignOut = async () => {
-    await signOut({ redirect: false })
-    router.push('/')
-  }
-
   return (
     <>
-      <Grid container spacing={2}>
-        <Grid size={{ xs: 12, lg: 9 }}>
-          <h1>Admin Page</h1>
-          <p>Signed in as: {user?.title} {user?.firstName} {user?.lastName}</p>
-          <p>Role: {user?.role ?? 'unknown'}</p>
-          <Button variant="contained" color="primary" onClick={handleSignOut}>
-            Sign Out
-          </Button>
+      <Grid container sx={{ height: 'calc(100dvh - 100px)' }}>
+        <Grid size={{ xs: 12, lg: 12 }} sx={{ height: '100%', width: '100%', p: 2 }}>
+          <ChatBoxFull />
         </Grid>
       </Grid>
 

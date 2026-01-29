@@ -63,7 +63,7 @@ const CoursesPage = () => {
         } else {
           setCourseFee(null);
         }
-      }catch (error) {
+      } catch (error) {
         console.error('Failed to fetch course fee:', error);
       } finally {
         setLoading(false);
@@ -191,7 +191,7 @@ const CoursesPage = () => {
           courseFee={courseFee}
           onUpdated={(fee) => setCourseFee(fee)}
         />
-        <SubjectSection 
+        <SubjectSection
           courseYearId={currentCourseYearID}
           courseYearYear={currentCourseYearID ? courseYear.find(cy => cy.id === currentCourseYearID)?.year ?? null : null}
         />
@@ -214,6 +214,12 @@ const CoursesPage = () => {
           });
         }}
       />
+      <Backdrop
+        sx={(theme) => ({ color: '#fff', zIndex: theme.zIndex.drawer + 99 })}
+        open={loading}
+      >
+        <CircularProgress color="inherit" />
+      </Backdrop>
     </Box>
   )
 }

@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useEffect } from 'react'
-import { Box, Button, Grid, Tab, Tabs, Typography } from '@mui/material'
+import { Backdrop, Box, Button, CircularProgress, Grid, Tab, Tabs, Typography } from '@mui/material'
 import MailOutlineRoundedIcon from '@mui/icons-material/MailOutlineRounded';
 
 import useBreakPointResolution from '@/lib/services/BreakPointResolusion'
@@ -24,6 +24,8 @@ const AccountsPage = () => {
     severity: 'error' | 'warning' | 'info' | 'success';
   } | null>(null);
 
+  const [isLoading, setIsLoading] = React.useState(false);
+
   const [accountsData, setAccountsData] = React.useState<TableAccountProps[]>([]);
   const [invitesData, setInvitesData] = React.useState<TableInvitationsProps[]>([]);
 
@@ -34,11 +36,15 @@ const AccountsPage = () => {
   useEffect(() => {
     const fetchAccounts = async () => {
       try {
+        setIsLoading(true)
         const response = await fetch('/api/accounts');
         const data = await response.json();
         setAccountsData(data);
       } catch (error) {
         console.error('Error fetching accounts:', error);
+      }
+      finally {
+        setIsLoading(false)
       }
     };
 
@@ -64,7 +70,7 @@ const AccountsPage = () => {
 
   return (
     <>
-      <Box sx={{ p: {xs: 1, md: 3} }}>
+      <Box sx={{ p: { xs: 1, md: 3 } }}>
         <Box sx={{ display: { xs: 'block', sm: 'flex' }, justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
           <Typography variant="h4">จัดการบัญชี</Typography>
           <Button
@@ -85,7 +91,7 @@ const AccountsPage = () => {
           </Tabs>
         </Box>
         <CustomTabPanel value={tab} index={0}>
-          <AccountsTable 
+          <AccountsTable
             data={accountsData}
           />
         </CustomTabPanel>
@@ -109,6 +115,12 @@ const AccountsPage = () => {
       {alert && (
         <CustomAlert message={alert.message} severity={alert.severity} />
       )}
+      <Backdrop
+        sx={(theme) => ({ color: '#fff', zIndex: theme.zIndex.drawer + 99 })}
+        open={isLoading}
+      >
+        <CircularProgress color="inherit" />
+      </Backdrop>
     </>
   )
 }
