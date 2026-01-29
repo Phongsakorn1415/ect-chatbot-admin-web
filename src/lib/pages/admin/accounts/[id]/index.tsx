@@ -1,12 +1,12 @@
 'use client'
 
-import React, {useEffect} from 'react'
+import React, { useEffect } from 'react'
 import { useParams } from 'next/navigation'
 
 import ProfileCard from '@/lib/components/pageComponent/account[id]/profileCard'
 import InfoCard from '@/lib/components/pageComponent/account[id]/infoCard'
 
-import { Box, Typography } from '@mui/material';
+import { Backdrop, Box, CircularProgress, Typography } from '@mui/material';
 import useBreakPointResolution from '@/lib/services/BreakPointResolusion';
 
 import { ContactInfo } from '@/lib/types/contact';
@@ -105,7 +105,7 @@ const AccountPage = () => {
                     isAccountDataLoaded={isAccountDataLoaded}
                     onSaved={(updated) => setAccountData(updated)}
                 />
-                <InfoCard 
+                <InfoCard
                     userRole={accountData?.role}
                     contactData={contactData ?? []}
                 />

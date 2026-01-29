@@ -4,6 +4,7 @@ import React, { ReactNode } from "react";
 import AuthProvider from "@/lib/layouts/AuthProviders";
 import ThemeRegistry from "@/lib/styles/ThemeRegistry";
 import NavBar from "@/lib/components/NavBar";
+import { ChatProvider } from "@/lib/contexts/ChatContext";
 import { Toolbar } from "@mui/material";
 import { usePathname } from "next/navigation";
 import type { Session } from "next-auth";
@@ -20,13 +21,15 @@ const MainLayout = ({ children, session }: MainLayoutProps) => {
   return (
     <AuthProvider session={session}>
       <ThemeRegistry>
-        {!isAdminRoute && (
-          <>
-            <NavBar HandleDrawerToggle={() => { }} />
-            <Toolbar />
-          </>
-        )}
-        {children}
+        <ChatProvider>
+          {!isAdminRoute && (
+            <>
+              <NavBar HandleDrawerToggle={() => { }} />
+              <Toolbar />
+            </>
+          )}
+          {children}
+        </ChatProvider>
       </ThemeRegistry>
     </AuthProvider>
   );

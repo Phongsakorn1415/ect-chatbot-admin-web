@@ -3,7 +3,7 @@ import React from 'react';
 import { Toolbar, Grid } from '@mui/material';
 import NavBar from '@/lib/components/NavBar';
 import MainDrawer from '@/lib/components/MainDrawer';
-import { DrawerProvider, useDrawer } from '@/lib/context/DrawerContext';
+import { DrawerProvider, useDrawer } from '@/lib/contexts/DrawerContext';
 
 const AdminLayoutInner = ({ children }: { children: React.ReactNode }) => {
   const drawer = useDrawer();
@@ -22,7 +22,7 @@ const AdminLayoutInner = ({ children }: { children: React.ReactNode }) => {
             handleDrawerTransitionEnd={handleTransitionEnd}
           />
         </Grid>
-        <Grid size={{ xs: 12, md: 8.5, lg: 9.5, xl: 10 }} sx={{ p: 2, maxHeight: 'calc(100vh - 64px)', overflowY: 'auto' }}>
+        <Grid size={{ xs: 12, md: 8.5, lg: 9.5, xl: 10 }} sx={{ maxHeight: 'calc(100vh - 64px)', overflowY: 'auto' }}>
           {children}
         </Grid>
       </Grid>
