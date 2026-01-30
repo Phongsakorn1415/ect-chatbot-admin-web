@@ -25,7 +25,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-      target: builder
+      target: migrator
     command: /bin/sh -c "npx prisma migrate deploy && npx prisma db seed"
     env_file:
       - .env
