@@ -17,6 +17,7 @@ WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY prisma ./prisma
 COPY package.json ./
+RUN npx prisma generate
 
 FROM base AS builder
 WORKDIR /app
