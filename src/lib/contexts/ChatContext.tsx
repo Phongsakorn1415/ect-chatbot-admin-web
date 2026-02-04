@@ -90,10 +90,10 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({
                         prompt: msg,
-                        // chat_history: messages.map((m) => ({
-                        //     role: m.role === "user" ? "user" : "model",
-                        //     parts: [m.content],
-                        // })),
+                        chat_history: messages.map((m) => ({
+                            role: m.role === "user" ? "user" : "assistant",
+                            content: m.content,
+                        })),
                     }),
                 });
 

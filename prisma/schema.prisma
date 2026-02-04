@@ -134,6 +134,18 @@ model contact {
   updatedAt      DateTime     @updatedAt
 }
 
+model ChatLog {
+  id             Int      @id @default(autoincrement())
+  userMessage    String?  @map("user_message") 
+  aiResponse     String?  @map("ai_response")
+  toolUsed       String?  @map("tool_used")
+  toolResult     String?  @map("tool_result")
+  toolsArguments String?  @map("tools_arguments")
+  chatHistory    String?  @map("chat_history")
+  createdAt      DateTime @default(now()) @map("created_at")
+  @@map("chat_logs")
+}
+
 enum Role {
   TEACHER
   ADMIN

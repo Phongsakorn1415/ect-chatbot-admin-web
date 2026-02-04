@@ -7,6 +7,8 @@ import MoreVertIcon from '@mui/icons-material/MoreVert'
 import TextSnippetIcon from '@mui/icons-material/TextSnippet'
 import TableChartIcon from '@mui/icons-material/TableChart'
 import DeleteSweepIcon from '@mui/icons-material/DeleteSweep'
+import WarningAmberIcon from '@mui/icons-material/WarningAmber';
+
 import React, { useRef, useEffect, useState } from 'react'
 import { useChat } from '@/lib/hooks/useChat'
 import { exportToCsv, exportToTxt } from '@/lib/utils/chatExport'
@@ -61,9 +63,12 @@ const ChatBoxCard = () => {
     return (
         <Paper elevation={3} sx={{ width: '100%', height: '65vh', display: 'flex', flexDirection: 'column', position: 'relative', overflow: 'hidden', borderRadius: 2 }}>
             <Box sx={{ p: 2, color: 'primary.contrastText', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <Typography variant="h6" sx={{ color: 'black', display: 'flex', alignItems: 'center', gap: 1 }}>
+                <Typography variant="h6" sx={{ color: 'black', display: 'flex', alignItems: 'center', gap: 1, flexDirection: 'row' }}>
                     {/* <SmartToyIcon /> */}
                     ECT Chatbot
+                    <Typography variant="body2" sx={{ color: 'warning.main', display: 'flex', alignItems: { xs: 'flex-start', sm: 'flex-end' }, flexDirection: 'row' }}>
+                        <WarningAmberIcon /> ทดสอบการใช้งาน จะมีการเก็บประวัติแชท
+                    </Typography>
                 </Typography>
                 <IconButton onClick={handleMenuClick} color="inherit" size="small">
                     <MoreVertIcon />
