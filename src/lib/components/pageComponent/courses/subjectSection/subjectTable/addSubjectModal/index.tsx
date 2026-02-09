@@ -29,6 +29,7 @@ import {
 import AddIcon from "@mui/icons-material/Add";
 import DeleteIcon from "@mui/icons-material/Delete";
 import AttachFileIcon from '@mui/icons-material/AttachFile';
+import { PDFDocument } from 'pdf-lib';
 import type { educationSector } from "@/lib/types/course-year";
 
 type AddContext =
@@ -59,7 +60,9 @@ type ParsedSubject = {
 	credit?: number;
 	language?: string;
 	selected?: boolean;
-};
+	year?: number;
+	term?: number;
+}; // ParsedSubject
 
 const defaultManualRow = (): ManualRow => ({ code: "", name: "", credit: "", language: "", selected: true });
 
@@ -72,26 +75,45 @@ const AddSubjectModal: React.FC<Props> = ({ open, onClose, context, sectors = []
 
 	// AI state
 	const [files, setFiles] = useState<File[]>([]);
+	const [pageRanges, setPageRanges] = useState<Record<string, string>>({});
 	const [aiLoading, setAiLoading] = useState(false);
 	const [parsed, setParsed] = useState<ParsedSubject[]>([]);
 	const [destinations, setDestinations] = useState<Record<number, string>>({}); // key=index, value=destKey
-	const destTabs = useMemo(() => {
-		// Build destination tabs from sectors + elective
-		const sectorTabs = (sectors ?? []).map((s) => ({ key: `sector:${s.id}`, label: `ปี ${s.year} ${s.semester !== 0 ? `ภาค ${s.semester}` : "ภาคฤดูร้อน"}` }));
-		const electiveTab = { key: "elective", label: "วิชาเลือก" };
-		return [...sectorTabs, electiveTab];
-	}, [sectors]);
-	const [activeDestTab, setActiveDestTab] = useState(0);
+	const [missingSectorAlert, setMissingSectorAlert] = useState<{ year: number; term: number } | null>(null);
+	const [tempSectors, setTempSectors] = useState<educationSector[]>([]);
+	const [sortConfig, setSortConfig] = useState<{ key: keyof ParsedSubject; direction: 'asc' | 'desc' }>({ key: 'year', direction: 'asc' });
+	const [creatingSector, setCreatingSector] = useState(false);
+
+	// Combined sectors for validation
+	const allSectors = useMemo(() => [...sectors, ...tempSectors], [sectors, tempSectors]);
+	const parsePageRange = (rangeStr: string): number[] => {
+		const pages: Set<number> = new Set();
+		const parts = rangeStr.split(",").map(s => s.trim()).filter(s => s);
+		for (const part of parts) {
+			if (part.includes("-")) {
+				const [start, end] = part.split("-").map(Number);
+				if (!isNaN(start) && !isNaN(end)) {
+					for (let i = start; i <= end; i++) pages.add(i - 1);
+				}
+			} else {
+				const p = Number(part);
+				if (!isNaN(p)) pages.add(p - 1);
+			}
+		}
+		return Array.from(pages).sort((a, b) => a - b);
+	};
 
 	const resetAll = () => {
 		setTab(0);
 		setRows([defaultManualRow()]);
 		setSaving(false);
 		setFiles([]);
+		setPageRanges({});
 		setAiLoading(false);
 		setParsed([]);
 		setDestinations({});
-		setActiveDestTab(0);
+		setMissingSectorAlert(null);
+		setTempSectors([]);
 	};
 
 	const handleClose = () => {
@@ -196,62 +218,83 @@ const AddSubjectModal: React.FC<Props> = ({ open, onClose, context, sectors = []
 	const analyzeWithAI = async () => {
 		if (files.length === 0) return;
 		setAiLoading(true);
+		setMissingSectorAlert(null);
 		try {
 			let allParsedData: ParsedSubject[] = [];
 
-			// Process each file individually based on its type
 			for (const file of files) {
-				const form = new FormData();
-				form.append("file", file);
-
+				let body: FormData | string;
+				let headers: Record<string, string> = {};
 				let endpoint = "";
+
 				if (file.type === "application/pdf") {
 					endpoint = "/api/ai/subjects/gemini/pdf";
+					const rangeStr = pageRanges[file.name];
+					let fileToUpload = file;
+
+					if (rangeStr) {
+						try {
+							const pdfDoc = await PDFDocument.load(await file.arrayBuffer());
+							const newPdf = await PDFDocument.create();
+							const indices = parsePageRange(rangeStr);
+							// Filter indices to be within bounds
+							const validIndices = indices.filter(i => i >= 0 && i < pdfDoc.getPageCount());
+
+							if (validIndices.length > 0) {
+								const copiedPages = await newPdf.copyPages(pdfDoc, validIndices);
+								copiedPages.forEach((page: any) => newPdf.addPage(page));
+								const pdfBytes = await newPdf.save();
+								fileToUpload = new File([pdfBytes as any], file.name, { type: "application/pdf" });
+							}
+						} catch (e) {
+							console.error("Error slicing PDF:", e);
+							// Fallback to original file or show warning?
+							// For now, continue with original file if slicing fails, or maybe strict error?
+						}
+					}
+
+					const form = new FormData();
+					form.append("file", fileToUpload);
+					body = form;
 				} else if (file.type.startsWith("image/")) {
 					endpoint = "/api/ai/subjects/gemini/img";
+					const form = new FormData();
+					form.append("file", file);
+					body = form;
 				} else {
-					console.warn(`Unsupported file type: ${file.type} for file: ${file.name}`);
+					console.warn(`Unsupported file type: ${file.type}`);
 					continue;
 				}
 
-				const res = await fetch(endpoint, {
-					method: "POST",
-					body: form
-				});
-
+				const res = await fetch(endpoint, { method: "POST", body });
 				if (!res.ok) {
-					const errorText = await res.text();
-					console.error(`Failed to process file ${file.name}:`, errorText);
+					console.error(`Failed to process ${file.name}`);
 					continue;
 				}
 
 				const responseData = await res.json();
-				// The API returns the parsed data directly as an array
 				const parsedFromFile: ParsedSubject[] = Array.isArray(responseData) ? responseData : [];
-
-				// Map the API response to match our ParsedSubject type
 				const mappedData: ParsedSubject[] = parsedFromFile.map(item => ({
 					code: item.code,
 					name: item.name,
 					credit: item.credit,
 					language: item.language === 'th' ? 'ไทย' : item.language === 'en' ? 'อังกฤษ' : item.language,
-					selected: true
+					selected: true,
+					year: item.year, // AI returns 'year'
+					term: item.term  // AI returns 'term'
 				}));
-
 				allParsedData = [...allParsedData, ...mappedData];
 			}
 
 			if (allParsedData.length === 0) {
 				alert("ไม่พบข้อมูลวิชาในไฟล์ที่อัปโหลด");
+				setParsed([]);
 				return;
 			}
 
-			setParsed(allParsedData);
-			const initialDest: Record<number, string> = {};
-			allParsedData.forEach((_, idx) => {
-				initialDest[idx] = context.type === "sector" ? `sector:${context.sector.id}` : "elective";
-			});
-			setDestinations(initialDest);
+			// Validation Logic: Check for missing sectors
+			checkNextMissing(allParsedData, allSectors);
+
 		} catch (e) {
 			console.error(e);
 			alert("ไม่สามารถวิเคราะห์ไฟล์ได้");
@@ -259,6 +302,95 @@ const AddSubjectModal: React.FC<Props> = ({ open, onClose, context, sectors = []
 			setAiLoading(false);
 		}
 	};
+
+	const checkNextMissing = (data: ParsedSubject[], currentSectors: educationSector[]) => {
+		const missing = data.find(p => {
+			if (!p.year || p.term === undefined) return false;
+			return !currentSectors.some(s => s.year === p.year && s.semester === p.term);
+		});
+
+		if (missing) {
+			setParsed(data);
+			setMissingSectorAlert({ year: missing.year!, term: missing.term! });
+		} else {
+			setParsed(data);
+			setMissingSectorAlert(null);
+			// Auto-map destinations
+			const initialDest: Record<number, string> = {};
+			data.forEach((p, idx) => {
+				const match = currentSectors.find(s => s.year === p.year && s.semester === p.term);
+				if (match) {
+					initialDest[idx] = `sector:${match.id}`;
+				} else {
+					initialDest[idx] = "elective";
+				}
+			});
+			setDestinations(initialDest);
+		}
+	};
+
+	const handleCreateSector = async () => {
+		if (!missingSectorAlert || !courseYearId) return;
+		try {
+			setCreatingSector(true);
+			const res = await fetch(`/api/course/course-year/${courseYearId}/sector`, {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({ year: missingSectorAlert.year, semester: missingSectorAlert.term }),
+			});
+			if (!res.ok) throw new Error("Failed to create sector");
+
+			const json = await res.json();
+			const newSector = json.data;
+
+			const newTempSectors = [...tempSectors, newSector];
+			setTempSectors(newTempSectors);
+
+			// Re-check with new sectors
+			checkNextMissing(parsed, [...sectors, ...newTempSectors]); // Use explicit list to be safe
+		} catch (e) {
+			console.error(e);
+			alert("เกิดข้อผิดพลาดในการสร้างภาคการศึกษา");
+		} finally {
+			setCreatingSector(false);
+		}
+	};
+
+	const handleDeleteMissing = () => {
+		if (!missingSectorAlert) return;
+		const filtered = parsed.filter(p => !(p.year === missingSectorAlert.year && p.term === missingSectorAlert.term));
+		if (filtered.length === 0) {
+			alert("ไม่มีวิชาเหลืออยู่");
+			resetAll();
+			return;
+		}
+		checkNextMissing(filtered, allSectors);
+	};
+
+	const handleCancelAnalysis = () => {
+		setParsed([]);
+		setMissingSectorAlert(null);
+		setTempSectors([]);
+	};
+
+	const handleSort = (key: keyof ParsedSubject) => {
+		setSortConfig(prev => ({
+			key,
+			direction: prev.key === key && prev.direction === 'asc' ? 'desc' : 'asc'
+		}));
+	};
+
+	const sortedParsed = useMemo(() => {
+		const sorted = [...parsed];
+		sorted.sort((a, b) => {
+			const aVal = a[sortConfig.key] ?? "";
+			const bVal = b[sortConfig.key] ?? "";
+			if (aVal < bVal) return sortConfig.direction === 'asc' ? -1 : 1;
+			if (aVal > bVal) return sortConfig.direction === 'asc' ? 1 : -1;
+			return 0;
+		});
+		return sorted;
+	}, [parsed, sortConfig]);
 
 	const onSubmitAI = async () => {
 		if (parsed.length === 0) return;
@@ -347,7 +479,7 @@ const AddSubjectModal: React.FC<Props> = ({ open, onClose, context, sectors = []
 		}
 	};
 
-	const activeDestKey = destTabs[activeDestTab]?.key ?? "";
+	// const activeDestKey = destTabs[activeDestTab]?.key ?? "";
 
 	return (
 		<Dialog open={open} onClose={handleClose} fullWidth maxWidth="md">
@@ -462,9 +594,37 @@ const AddSubjectModal: React.FC<Props> = ({ open, onClose, context, sectors = []
 									}}
 								/>
 								{files.length > 0 && (
-									<Typography sx={{ mt: 1 }} variant="body2" color="text.primary">
-										ไฟล์ที่เลือก: {files.map((f) => f.name).join(", ")}
-									</Typography>
+									<Stack spacing={1} sx={{ mt: 1 }}>
+										{files.map((f, idx) => (
+											<Box key={idx} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+												<Typography variant="body2" sx={{ flexGrow: 1 }}>
+													{f.name} ({Math.round(f.size / 1024)} KB)
+												</Typography>
+												{f.type === "application/pdf" && (
+													<TextField
+														label="ระบุหน้า (เช่น 1-3, 5)"
+														size="small"
+														placeholder="ทั้งหมด"
+														value={pageRanges[f.name] || ""}
+														onChange={(e) => setPageRanges(prev => ({ ...prev, [f.name]: e.target.value }))}
+														sx={{ width: 150 }}
+													/>
+												)}
+												<IconButton
+													size="small"
+													onClick={() => {
+														const newFiles = files.filter((_, i) => i !== idx);
+														setFiles(newFiles);
+														const newRanges = { ...pageRanges };
+														delete newRanges[f.name];
+														setPageRanges(newRanges);
+													}}
+												>
+													<DeleteIcon fontSize="small" />
+												</IconButton>
+											</Box>
+										))}
+									</Stack>
 								)}
 								<Box sx={{ mt: 1 }}>
 									<Button variant="outlined" onClick={analyzeWithAI} disabled={files.length === 0 || aiLoading}>
@@ -473,110 +633,160 @@ const AddSubjectModal: React.FC<Props> = ({ open, onClose, context, sectors = []
 								</Box>
 							</Box>
 
-							{parsed.length > 0 && (
-								<Box>
-									<Typography sx={{ mb: 1 }}>
-										ตรวจสอบและแก้ไขข้อมูลวิชาก่อนบันทึก (แท็บเพื่อกรองรายการ)
-									</Typography>
-									<Tabs
-										value={activeDestTab}
-										onChange={(_, v) => setActiveDestTab(v)}
-										variant="scrollable"
-										scrollButtons="auto"
-										sx={{ borderBottom: 1, borderColor: "divider", mb: 2 }}
-									>
-										{destTabs.map((t, i) => (
-											<Tab key={t.key} label={t.label} />
-										))}
-									</Tabs>
+							<Box>
+								<Typography sx={{ mb: 1 }}>
+									ตรวจสอบและแก้ไขข้อมูลวิชาก่อนบันทึก
+								</Typography>
 
-									<Stack spacing={2}>
-										{parsed.map((p, idx) => {
-											const dest = destinations[idx] ?? (context.type === "sector" ? `sector:${context.sector.id}` : "elective");
-											// Only show rows that match active tab
-											if (destTabs[activeDestTab]?.key !== dest) return null;
-											return (
-												<Box key={idx} sx={{ border: "1px solid #eee", borderRadius: 1, p: 2 }}>
-													<Stack direction={{ xs: "column", sm: "row" }} spacing={2} alignItems={{ sm: "center" }}>
-														<Checkbox
-															checked={p.selected !== false}
-															onChange={(e) => {
-																const val = e.target.checked;
-																setParsed((prev) => prev.map((x, i) => (i === idx ? { ...x, selected: val } : x)));
-															}}
-														/>
-														<TextField
-															required
-															label="รหัสวิชา"
-															value={p.code || ""}
-															onChange={(e) => setParsed((prev) => prev.map((x, i) => (i === idx ? { ...x, code: e.target.value } : x)))}
-															sx={{ minWidth: 140 }}
-														/>
-														<TextField
-															required
-															label="ชื่อวิชา"
-															value={p.name || ""}
-															onChange={(e) => setParsed((prev) => prev.map((x, i) => (i === idx ? { ...x, name: e.target.value } : x)))}
-															sx={{ minWidth: 160, flexGrow: 1 }}
-														/>
-														<TextField
-															label="หน่วยกิต"
-															type="number"
-															value={p.credit || ""}
-															onChange={(e) => setParsed((prev) => prev.map((x, i) => (i === idx ? { ...x, credit: Number(e.target.value) || 0 } : x)))}
-															sx={{ minWidth: 80 }}
-															inputProps={{ min: 0 }}
-														/>
-														<TextField
-															label="ภาษา"
-															value={p.language || ""}
-															onChange={(e) => setParsed((prev) => prev.map((x, i) => (i === idx ? { ...x, language: e.target.value } : x)))}
-															sx={{ minWidth: 120 }}
-														/>
-														<FormControl sx={{ minWidth: 200 }} size="small">
-															<InputLabel id={`dest-${idx}`}>ปลายทาง</InputLabel>
-															<Select
-																labelId={`dest-${idx}`}
-																value={dest}
-																label="ปลายทาง"
-																onChange={(e) => setDestinations((prev) => ({ ...prev, [idx]: String(e.target.value) }))}
-															>
-																{sectors.map((s) => (
-																	<MenuItem key={s.id} value={`sector:${s.id}`}>
-																		ปี {s.year} {s.semester !== 0 ? `ภาค ${s.semester}` : "ภาคฤดูร้อน"}
-																	</MenuItem>
-																))}
-																<MenuItem value="elective">วิชาเลือก</MenuItem>
-															</Select>
-														</FormControl>
-														<IconButton
-															color="error"
-															aria-label="remove"
-															onClick={() => {
-																setParsed((prev) => prev.filter((_, i) => i !== idx));
-																setDestinations((prev) => {
-																	const newDest = { ...prev };
-																	delete newDest[idx];
-																	// Reindex remaining destinations
-																	const reindexed: Record<number, string> = {};
-																	Object.keys(newDest).forEach(key => {
-																		const oldIdx = Number(key);
-																		const newIdx = oldIdx > idx ? oldIdx - 1 : oldIdx;
-																		reindexed[newIdx] = newDest[oldIdx];
+								<TableContainer sx={{ maxHeight: 400, border: "1px solid #eee" }}>
+									<Table stickyHeader size="small">
+										<TableHead>
+											<TableRow>
+												<TableCell padding="checkbox">
+													<Checkbox
+														checked={parsed.every(p => p.selected !== false)}
+														indeterminate={parsed.some(p => p.selected !== false) && !parsed.every(p => p.selected !== false)}
+														onChange={(e) => {
+															const val = e.target.checked;
+															setParsed(prev => prev.map(p => ({ ...p, selected: val })));
+														}}
+													/>
+												</TableCell>
+												<TableCell sx={{ minWidth: 100 }}>
+													<Button variant="text" size="small" onClick={() => handleSort('code')}>
+														รหัสวิชา {sortConfig.key === 'code' && (sortConfig.direction === 'asc' ? '▲' : '▼')}
+													</Button>
+												</TableCell>
+												<TableCell sx={{ minWidth: 150 }}>
+													<Button variant="text" size="small" onClick={() => handleSort('name')}>
+														ชื่อวิชา {sortConfig.key === 'name' && (sortConfig.direction === 'asc' ? '▲' : '▼')}
+													</Button>
+												</TableCell>
+												<TableCell>หน่วยกิต</TableCell>
+												<TableCell>ภาษา</TableCell>
+												<TableCell>
+													<Button variant="text" size="small" onClick={() => handleSort('year')}>
+														ปี {sortConfig.key === 'year' && (sortConfig.direction === 'asc' ? '▲' : '▼')}
+													</Button>
+												</TableCell>
+												<TableCell>
+													<Button variant="text" size="small" onClick={() => handleSort('term')}>
+														เทอม {sortConfig.key === 'term' && (sortConfig.direction === 'asc' ? '▲' : '▼')}
+													</Button>
+												</TableCell>
+												<TableCell>เพิ่มไปยัง</TableCell>
+												<TableCell>Action</TableCell>
+											</TableRow>
+										</TableHead>
+										<TableBody>
+											{sortedParsed.map((p, idx) => {
+												// Find original index to update destinations
+												const originalIdx = parsed.indexOf(p);
+												const dest = destinations[originalIdx] ?? "elective";
+
+												return (
+													<TableRow key={idx} hover>
+														<TableCell padding="checkbox">
+															<Checkbox
+																checked={p.selected !== false}
+																onChange={(e) => {
+																	const val = e.target.checked;
+																	setParsed(prev => prev.map((x, i) => i === originalIdx ? { ...x, selected: val } : x));
+																}}
+															/>
+														</TableCell>
+														<TableCell>
+															<TextField
+																variant="standard"
+																value={p.code || ""}
+																onChange={(e) => setParsed(prev => prev.map((x, i) => i === originalIdx ? { ...x, code: e.target.value } : x))}
+																fullWidth
+															/>
+														</TableCell>
+														<TableCell>
+															<TextField
+																variant="standard"
+																value={p.name || ""}
+																onChange={(e) => setParsed(prev => prev.map((x, i) => i === originalIdx ? { ...x, name: e.target.value } : x))}
+																fullWidth
+															/>
+														</TableCell>
+														<TableCell>
+															<TextField
+																variant="standard"
+																type="number"
+																value={p.credit || ""}
+																onChange={(e) => setParsed(prev => prev.map((x, i) => i === originalIdx ? { ...x, credit: Number(e.target.value) || 0 } : x))}
+																sx={{ width: 50 }}
+																inputProps={{ min: 0 }}
+															/>
+														</TableCell>
+														<TableCell>
+															<TextField
+																variant="standard"
+																value={p.language || ""}
+																onChange={(e) => setParsed(prev => prev.map((x, i) => i === originalIdx ? { ...x, language: e.target.value } : x))}
+																sx={{ width: 50 }}
+															/>
+														</TableCell>
+														<TableCell>{p.year}</TableCell>
+														<TableCell>{p.term}</TableCell>
+														<TableCell>
+															<FormControl variant="standard" size="small" fullWidth>
+																<Select
+																	value={dest}
+																	onChange={(e) => setDestinations(prev => ({ ...prev, [originalIdx]: String(e.target.value) }))}
+																>
+																	{allSectors.map((s) => (
+																		<MenuItem key={s.id} value={`sector:${s.id}`}>
+																			ปี {s.year} {s.semester !== 0 ? `ภาค ${s.semester}` : "ภาคฤดูร้อน"}
+																		</MenuItem>
+																	))}
+																	<MenuItem value="elective">วิชาเลือก</MenuItem>
+																</Select>
+															</FormControl>
+														</TableCell>
+														<TableCell>
+															<IconButton
+																size="small"
+																color="error"
+																onClick={() => {
+																	setParsed(prev => prev.filter((_, i) => i !== originalIdx));
+																	setDestinations(prev => {
+																		const newDest = { ...prev };
+																		delete newDest[originalIdx];
+																		// Reindex? Actually filtered logic above uses original references, but parsed is recreated.
+																		// With current logic, purely filtering index is dangerous if we rely on it.
+																		// Better to reset parsed and destinations completely if we delete?
+																		// Or just filter and rebuild dests.
+																		// Simple way:
+																		const remaining = parsed.filter((_, i) => i !== originalIdx);
+																		// Re-run mapping for safety or just let user re-select?
+																		// Let's just remove and not worry about shifting too much,
+																		// but dests are keyed by index. We MUST shift keys.
+																		const reindexed: Record<number, string> = {};
+																		remaining.forEach((_, newI) => {
+																			// Map old to new? Complex.
+																			// Easier: Just don't use index keys if possible, but strict array.
+																			// For now, re-map logic:
+																			const oldKey = newI >= originalIdx ? newI + 1 : newI;
+																			reindexed[newI] = newDest[oldKey];
+																		});
+																		return reindexed;
 																	});
-																	return reindexed;
-																});
-															}}
-														>
-															<DeleteIcon />
-														</IconButton>
-													</Stack>
-												</Box>
-											);
-										})}
-									</Stack>
-								</Box>
-							)}
+																}}
+															>
+																<DeleteIcon fontSize="small" />
+															</IconButton>
+														</TableCell>
+													</TableRow>
+												);
+											})}
+										</TableBody>
+									</Table>
+								</TableContainer>
+							</Box>
+
 						</Stack>
 					</Box>
 				)}
@@ -593,6 +803,30 @@ const AddSubjectModal: React.FC<Props> = ({ open, onClose, context, sectors = []
 					</Button>
 				)}
 			</DialogActions>
+
+			{/* Blocking Alert for Missing Sector */}
+			<Dialog open={!!missingSectorAlert} maxWidth="sm" fullWidth>
+				<DialogTitle>ไม่พบข้อมูลปีการศึกษา</DialogTitle>
+				<DialogContent>
+					<Typography>
+						พบวิชาของปีการศึกษา {missingSectorAlert?.year} ภาคเรียนที่ {missingSectorAlert?.term} ซึ่งยังไม่มีในระบบ
+					</Typography>
+					<Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+						กรุณาเลือกการดำเนินการ:
+					</Typography>
+				</DialogContent>
+				<DialogActions sx={{ flexDirection: 'column', gap: 1, alignItems: 'stretch', p: 2 }}>
+					<Button variant="contained" onClick={handleCreateSector} disabled={creatingSector}>
+						{creatingSector ? "กำลังสร้าง..." : `สร้างภาคการศึกษา ${missingSectorAlert?.year}/${missingSectorAlert?.term == 0 ? "ฤดูร้อน" : missingSectorAlert?.term} ใหม่`}
+					</Button>
+					<Button variant="outlined" color="error" onClick={handleDeleteMissing} disabled={creatingSector}>
+						ลบวิชาของเทอมนี้ออก
+					</Button>
+					<Button variant="text" color="inherit" onClick={handleCancelAnalysis} disabled={creatingSector}>
+						ยกเลิก
+					</Button>
+				</DialogActions>
+			</Dialog>
 		</Dialog>
 	);
 };
