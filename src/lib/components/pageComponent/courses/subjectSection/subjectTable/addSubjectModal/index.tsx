@@ -139,6 +139,8 @@ const AddSubjectModal: React.FC<Props> = ({ open, onClose, context, sectors = []
 		try {
 			setSaving(true);
 			let created = 0;
+			let createdSubjectIDs = [];
+
 			for (const r of toCreate) {
 				const payload = buildPayload(r);
 				const res = await fetch("/api/course/subject", {
@@ -151,8 +153,29 @@ const AddSubjectModal: React.FC<Props> = ({ open, onClose, context, sectors = []
 					console.error("Create subject failed:", text);
 					throw new Error(text || "Create subject failed");
 				}
+
+				const subjectID = await res.json();
+				createdSubjectIDs.push(subjectID.data.id);
+
 				created += 1;
 			}
+
+			console.log("createdSubjectIDs", createdSubjectIDs);
+			const embedres = await fetch("/api/embed",
+				{
+					method: "POST",
+					headers: { "Content-Type": "application/json" },
+					body: JSON.stringify({ subject_id: createdSubjectIDs }),
+				});
+
+			console.log("embedres", embedres);
+
+			if (!embedres.ok) {
+				const text = await embedres.text();
+				console.error("Embed failed:", text);
+				throw new Error(text || "Embed failed");
+			}
+
 			onAdded?.(created);
 			resetAll();
 			onClose();
@@ -175,12 +198,12 @@ const AddSubjectModal: React.FC<Props> = ({ open, onClose, context, sectors = []
 		setAiLoading(true);
 		try {
 			let allParsedData: ParsedSubject[] = [];
-			
+
 			// Process each file individually based on its type
 			for (const file of files) {
 				const form = new FormData();
 				form.append("file", file);
-				
+
 				let endpoint = "";
 				if (file.type === "application/pdf") {
 					endpoint = "/api/ai/subjects/gemini/pdf";
@@ -190,22 +213,22 @@ const AddSubjectModal: React.FC<Props> = ({ open, onClose, context, sectors = []
 					console.warn(`Unsupported file type: ${file.type} for file: ${file.name}`);
 					continue;
 				}
-				
-				const res = await fetch(endpoint, { 
-					method: "POST", 
-					body: form 
+
+				const res = await fetch(endpoint, {
+					method: "POST",
+					body: form
 				});
-				
+
 				if (!res.ok) {
 					const errorText = await res.text();
 					console.error(`Failed to process file ${file.name}:`, errorText);
 					continue;
 				}
-				
+
 				const responseData = await res.json();
 				// The API returns the parsed data directly as an array
 				const parsedFromFile: ParsedSubject[] = Array.isArray(responseData) ? responseData : [];
-				
+
 				// Map the API response to match our ParsedSubject type
 				const mappedData: ParsedSubject[] = parsedFromFile.map(item => ({
 					code: item.code,
@@ -214,15 +237,15 @@ const AddSubjectModal: React.FC<Props> = ({ open, onClose, context, sectors = []
 					language: item.language === 'th' ? 'ไทย' : item.language === 'en' ? 'อังกฤษ' : item.language,
 					selected: true
 				}));
-				
+
 				allParsedData = [...allParsedData, ...mappedData];
 			}
-			
+
 			if (allParsedData.length === 0) {
 				alert("ไม่พบข้อมูลวิชาในไฟล์ที่อัปโหลด");
 				return;
 			}
-			
+
 			setParsed(allParsedData);
 			const initialDest: Record<number, string> = {};
 			allParsedData.forEach((_, idx) => {
@@ -239,14 +262,14 @@ const AddSubjectModal: React.FC<Props> = ({ open, onClose, context, sectors = []
 
 	const onSubmitAI = async () => {
 		if (parsed.length === 0) return;
-		
+
 		// Filter only selected subjects
 		const selectedSubjects = parsed.filter(subj => subj.selected !== false);
 		if (selectedSubjects.length === 0) {
 			alert("กรุณาเลือกวิชาที่ต้องการเพิ่ม");
 			return;
 		}
-		
+
 		if (context.type === "elective" && (courseYearId == null || Number.isNaN(Number(courseYearId)))) {
 			alert("ไม่พบปีหลักสูตรสำหรับวิชาเลือก");
 			return;
@@ -254,12 +277,14 @@ const AddSubjectModal: React.FC<Props> = ({ open, onClose, context, sectors = []
 		try {
 			setSaving(true);
 			let created = 0;
+			let createdSubjectIDs: number[] = [];
+
 			for (let i = 0; i < parsed.length; i++) {
 				const subj = parsed[i];
-				
+
 				// Skip unselected subjects
 				if (subj.selected === false) continue;
-				
+
 				const dest = destinations[i] || (context.type === "sector" ? `sector:${context.sector.id}` : "elective");
 				let payloadBase = {
 					code: subj.code,
@@ -291,8 +316,26 @@ const AddSubjectModal: React.FC<Props> = ({ open, onClose, context, sectors = []
 					console.error("Create subject failed:", txt);
 					throw new Error(txt || "Create subject failed");
 				}
+
+				const subjectID = await res.json();
+				createdSubjectIDs.push(subjectID.data.id);
+
 				created += 1;
 			}
+
+			const embedres = await fetch("/api/embed",
+				{
+					method: "POST",
+					headers: { "Content-Type": "application/json" },
+					body: JSON.stringify({ subject_id: createdSubjectIDs }),
+				});
+
+			if (!embedres.ok) {
+				const text = await embedres.text();
+				console.error("Embed failed:", text);
+				throw new Error(text || "Embed failed");
+			}
+
 			onAdded?.(created);
 			resetAll();
 			onClose();
@@ -334,7 +377,7 @@ const AddSubjectModal: React.FC<Props> = ({ open, onClose, context, sectors = []
 											}}
 										/>
 										<TextField
-                                            required
+											required
 											label="รหัสวิชา"
 											value={r.code}
 											onChange={(e) => setRows((prev) => prev.map((x, i) => (i === idx ? { ...x, code: e.target.value } : x)))}
@@ -391,7 +434,7 @@ const AddSubjectModal: React.FC<Props> = ({ open, onClose, context, sectors = []
 										accept: "application/pdf,image/*"
 									}}
 									onChange={onFilesChange}
-									sx={{ 
+									sx={{
 										mb: 2,
 										'& input[type="file"]': {
 											'&::file-selector-button': {
@@ -506,9 +549,9 @@ const AddSubjectModal: React.FC<Props> = ({ open, onClose, context, sectors = []
 																<MenuItem value="elective">วิชาเลือก</MenuItem>
 															</Select>
 														</FormControl>
-														<IconButton 
-															color="error" 
-															aria-label="remove" 
+														<IconButton
+															color="error"
+															aria-label="remove"
 															onClick={() => {
 																setParsed((prev) => prev.filter((_, i) => i !== idx));
 																setDestinations((prev) => {
