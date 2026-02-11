@@ -66,7 +66,9 @@ const MenuDrawer: React.FC<PageDrawerProps> = ({ isOpen, drawerWidth, items, sho
         },
       }}
     >
-      <Typography variant="h6" sx={{ p: 2 }}>หลักสูตรทั้งหมด</Typography>
+      <Box sx={{ p: 2, cursor: 'pointer', display: 'flex', alignItems: 'center' }} onClick={() => router.push('/admin/courses')}>
+        <Typography variant="h6">หลักสูตรทั้งหมด</Typography>
+      </Box>
       <List>
         {items.map((item) => {
           const hasChildren = Array.isArray(item.children) && item.children.length > 0;

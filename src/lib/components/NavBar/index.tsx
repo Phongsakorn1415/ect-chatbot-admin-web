@@ -29,7 +29,7 @@ const NavBar = ({ HandleDrawerToggle }: NavBarProps) => {
       <AppBar
         position="fixed"
         sx={{
-          zIndex: MainTheme.zIndex.drawer + 1,
+          zIndex: MainTheme.zIndex.drawer + 20,
           bgcolor: 'white',
           color: MainTheme.palette.text.primary,
           boxShadow: 1
@@ -56,11 +56,11 @@ const NavBar = ({ HandleDrawerToggle }: NavBarProps) => {
           )}
         </Toolbar>
       </AppBar>
-      { status !== 'loading' && !session && (
-      <LoginModal
-        open={isLoginModalOpen}
-        onClose={handleCloseLoginModal}
-      />
+      {status !== 'loading' && !session && (
+        <LoginModal
+          open={isLoginModalOpen}
+          onClose={handleCloseLoginModal}
+        />
       )}
     </>
   )

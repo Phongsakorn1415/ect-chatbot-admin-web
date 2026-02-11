@@ -9,6 +9,7 @@ import MenuDrawer from '@/lib/components/pageComponent/courses/MenuDrawer';
 import { DrawerMenuItem } from "@/lib/types/PageDrawer";
 import { CourseYear } from '@/lib/types/course-year';
 import LateFeeSection from '@/lib/components/pageComponent/courses/lateFeeSection';
+import NewCourseModal from '@/lib/components/pageComponent/courses/CreateCourseModal';
 import { useRouter } from 'next/navigation';
 
 const drawerWidth = 240;
@@ -17,6 +18,7 @@ const LateFeePage = () => {
     const { isMobile, isTablet } = getBrackPointResolution()
     const [loading, setLoading] = React.useState(false);
     const router = useRouter();
+    const [openNewCourseModal, setOpenNewCourseModal] = React.useState(false);
 
     //fetch data for drawer
     const [courseYear, setCourseYear] = React.useState<CourseYear[]>([]);
@@ -56,7 +58,7 @@ const LateFeePage = () => {
     const handleDrawerClose = () => setOpen(false);
 
     return (
-        <Box sx={{ display: 'flex', width: '100%', gap: 0 }}>
+        <Box sx={{ display: 'flex', width: '100%', height: '100%', gap: 0 }}>
             {/* Page-scoped drawer at the left within this page area */}
             <MenuDrawer
                 isOpen={open}
@@ -68,7 +70,9 @@ const LateFeePage = () => {
                 // showAddButton={true} would require copying the modal logic.
                 // I'll disable it for simplicity in this specific page, or better yet, make it redirect if needed.
                 // Existing MenuDrawer prop showAddButton defaults to false.
-                showAddButton={false}
+                showAddButton={true}
+                addButtonText="เพิ่มหลักสูตรใหม่"
+                onAddButtonClick={() => setOpenNewCourseModal(true)}
             />
 
             {/* Page content overlays and slides when drawer opens (mobile/tablet) */}
@@ -114,6 +118,15 @@ const LateFeePage = () => {
             >
                 <CircularProgress color="inherit" />
             </Backdrop>
+            <NewCourseModal
+                open={openNewCourseModal}
+                onClose={() => setOpenNewCourseModal(false)}
+                onCreated={(created) => {
+                    if (created?.courseYear?.id) {
+                        router.push('/admin/courses');
+                    }
+                }}
+            />
         </Box>
     )
 }

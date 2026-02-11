@@ -89,6 +89,7 @@ const MainDrawer = ({ isOpen, HandleDrawerClose, handleDrawerTransitionEnd }: Ma
             p: 2,
             overflowY: 'auto',
             overflowX: 'hidden',
+            zIndex: (theme) => theme.zIndex.drawer + 2,
           }}
         >
           <DrawerContent />
