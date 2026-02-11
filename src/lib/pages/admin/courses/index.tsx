@@ -79,7 +79,8 @@ const CoursesPage = () => {
     id: cy.id.toString(),
     title: `หลักสูตรปี ${cy.year}`,
     status: cy.status as 'DRAFT' | 'PUBLISHED',
-    onClick: () => { setCurrentCourseYearID(cy.id) }
+    onClick: () => { setCurrentCourseYearID(cy.id) },
+    selected: cy.id === currentCourseYearID
   })) : [];
 
   // Keep the drawer closed by default on mobile to avoid horizontal overflow
