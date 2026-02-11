@@ -2,7 +2,7 @@ import { Box, Button, Drawer, IconButton, Link, Paper, Typography, Backdrop, Cir
 import React, { useTransition } from 'react'
 import useBreakPointResolution from '@/lib/services/BreakPointResolusion'
 import { useSession } from 'next-auth/react'
-import { useRouter } from 'next/navigation'
+import { useRouter, usePathname } from 'next/navigation'
 import { signOut } from 'next-auth/react'
 import AccountCircleRoundedIcon from '@mui/icons-material/AccountCircleRounded';
 import LogoutRoundedIcon from '@mui/icons-material/LogoutRounded';
@@ -20,6 +20,7 @@ const MainDrawer = ({ isOpen, HandleDrawerClose, handleDrawerTransitionEnd }: Ma
 
   const [isPending, startTransition] = useTransition()
   const router = useRouter()
+  const pathname = usePathname()
 
   if (status === 'loading' || !session) return null
 
@@ -50,10 +51,10 @@ const MainDrawer = ({ isOpen, HandleDrawerClose, handleDrawerTransitionEnd }: Ma
             <LogoutRoundedIcon fontSize='medium' />  {isMobile ? <Typography variant='body2' sx={{ ml: 1 }}>ออกจากระบบ</Typography> : null}
           </Button>
         </Paper>
-        <Paper elevation={0} sx={{ ':hover': { bgcolor: 'action.hover', cursor: 'pointer' }, p: 1, borderRadius: 2, display: 'flex', alignItems: 'center' }} onClick={() => handleNavigate('/admin')}>หน้าแรก</Paper>
-        <Paper elevation={0} sx={{ ':hover': { bgcolor: 'action.hover', cursor: 'pointer' }, p: 1, borderRadius: 2 }} onClick={() => handleNavigate('/admin/courses')}>หลักสูตร</Paper>
+        <Paper elevation={0} sx={{ ':hover': { bgcolor: 'action.hover', cursor: 'pointer' }, p: 1, borderRadius: 2, display: 'flex', alignItems: 'center', bgcolor: pathname === '/admin' ? 'action.selected' : 'inherit' }} onClick={() => handleNavigate('/admin')}>หน้าแรก</Paper>
+        <Paper elevation={0} sx={{ ':hover': { bgcolor: 'action.hover', cursor: 'pointer' }, p: 1, borderRadius: 2, bgcolor: pathname.startsWith('/admin/courses') ? 'action.selected' : 'inherit' }} onClick={() => handleNavigate('/admin/courses')}>หลักสูตร</Paper>
         {session.user?.role !== "TEACHER" && (
-          <Paper elevation={0} sx={{ ':hover': { bgcolor: 'action.hover', cursor: 'pointer' }, p: 1, borderRadius: 2 }} onClick={() => handleNavigate('/admin/accounts')}>บัญชีทั้งหมด</Paper>
+          <Paper elevation={0} sx={{ ':hover': { bgcolor: 'action.hover', cursor: 'pointer' }, p: 1, borderRadius: 2, bgcolor: pathname.startsWith('/admin/accounts') ? 'action.selected' : 'inherit' }} onClick={() => handleNavigate('/admin/accounts')}>บัญชีทั้งหมด</Paper>
         )}
       </Box>
     </>

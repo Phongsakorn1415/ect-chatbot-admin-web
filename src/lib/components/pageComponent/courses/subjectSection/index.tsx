@@ -142,7 +142,7 @@ const SubjectSection: React.FC<{ courseYearId: number | null, courseYearYear?: n
         const loadingMap: Record<number, boolean> = {};
         sectors.forEach(s => {
             map[s.id] = (courseSubjects || []).filter(sub => sub.education_sectorId === s.id);
-            loadingMap[s.id] = !!courseSubjectsLoading; 
+            loadingMap[s.id] = !!courseSubjectsLoading;
         });
         setSubjectsMap(map);
         setSubjectsLoading(loadingMap);
@@ -150,7 +150,7 @@ const SubjectSection: React.FC<{ courseYearId: number | null, courseYearYear?: n
 
     const handleChange = (_event: React.SyntheticEvent, newValue: number) => {
         // If clicking the add tab (last tab), open modal and keep current selection
-        if (newValue === allSemesters.length+1) {
+        if (newValue === allSemesters.length + 1) {
             setOpenAdd(true);
             return;
         }
@@ -323,7 +323,7 @@ const SubjectSection: React.FC<{ courseYearId: number | null, courseYearYear?: n
                             icon={<AddIcon />}
                             sx={{ color: 'black' }}
                             aria-label="เพิ่มภาคการศึกษา"
-                            {...a11yProps(allSemesters.length+1)}
+                            {...a11yProps(allSemesters.length + 1)}
                         />
                     </Tabs>
                 </Box>
@@ -342,6 +342,7 @@ const SubjectSection: React.FC<{ courseYearId: number | null, courseYearYear?: n
                             <Box sx={{ width: '100%', overflow: 'hidden' }}>
                                 <SubjectTable
                                     subjects={subjectsMap[sector.id] ?? null}
+                                    allSubjects={courseSubjects ?? []}
                                     loading={subjectsLoading[sector.id] ?? false}
                                     context={{ type: 'sector', sector }}
                                     sectors={allSemesters}
@@ -362,6 +363,7 @@ const SubjectSection: React.FC<{ courseYearId: number | null, courseYearYear?: n
                     <Box sx={{ width: '100%', overflow: 'hidden' }}>
                         <SubjectTable
                             subjects={electiveSubjects ?? null}
+                            allSubjects={courseSubjects ?? []}
                             loading={electiveLoading}
                             context={{ type: 'elective', courseYearId: courseYearId ?? null }}
                             sectors={allSemesters}
