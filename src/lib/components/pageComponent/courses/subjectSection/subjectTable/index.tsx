@@ -7,6 +7,7 @@ import SubjectRow from "./SubjectRow/index";
 import type { SearchKey } from "@/lib/types/subject-search";
 import type { educationSector } from "@/lib/types/course-year";
 import AddSubjectModal from "./addSubjectModal";
+import EditSubjectModal from "./editSubjectModal";
 
 type AddContext =
     | { type: 'sector'; sector: educationSector }
@@ -14,6 +15,7 @@ type AddContext =
 
 type Props = {
     subjects: Subject[] | null;
+    allSubjects?: Subject[];
     loading?: boolean;
     context: AddContext;
     sectors?: educationSector[];
@@ -22,7 +24,7 @@ type Props = {
     onAdded?: () => void;
 };
 
-const SubjectTable: React.FC<Props> = ({ subjects, loading = false, context, sectors = [], courseYearId = null, courseYearYear = null, onAdded }) => {
+const SubjectTable: React.FC<Props> = ({ subjects, allSubjects = [], loading = false, context, sectors = [], courseYearId = null, courseYearYear = null, onAdded }) => {
     // Local data safety
     const safeSubjects: Subject[] = subjects ?? [];
 
@@ -35,6 +37,7 @@ const SubjectTable: React.FC<Props> = ({ subjects, loading = false, context, sec
 
     // Modal state
     const [openAdd, setOpenAdd] = useState(false);
+    const [openEdit, setOpenEdit] = useState(false);
 
     // Search state
     const [searchKey, setSearchKey] = useState<SearchKey>("code");
@@ -157,7 +160,7 @@ const SubjectTable: React.FC<Props> = ({ subjects, loading = false, context, sec
                 />
 
                 <Button variant="outlined" onClick={() => setOpenAdd(true)}>เพิ่มวิชา</Button>
-                <Button variant="outlined" color="warning" disabled={selected.length === 0 || loading} onClick={() => console.log(selected)}>แก้ไขวิชา ({selected.length})</Button>
+                <Button variant="outlined" color="warning" disabled={selected.length === 0 || loading} onClick={() => setOpenEdit(true)}>แก้ไขวิชา ({selected.length})</Button>
                 <Button variant="outlined" color="error" disabled={selected.length === 0 || loading} onClick={handleDeleteSelectedSubject}>ลบวิชาที่เลือก ({selected.length})</Button>
             </Box>
             <TableContainer>
@@ -246,6 +249,20 @@ const SubjectTable: React.FC<Props> = ({ subjects, loading = false, context, sec
                 courseYearYear={courseYearYear}
                 onAdded={() => {
                     setOpenAdd(false);
+                    onAdded?.();
+                }}
+            />
+
+            {/* Edit Subject Modal */}
+            <EditSubjectModal
+                open={openEdit}
+                onClose={() => setOpenEdit(false)}
+                subjects={safeSubjects.filter(s => selected.includes(s.id))}
+                allSubjects={allSubjects}
+                sectors={sectors}
+                onEdited={() => {
+                    setOpenEdit(false);
+                    setSelected([]);
                     onAdded?.();
                 }}
             />
