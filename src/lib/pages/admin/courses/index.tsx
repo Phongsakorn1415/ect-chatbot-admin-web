@@ -1,9 +1,12 @@
 'use client'
 
-import { Backdrop, Box, Button, CircularProgress, Grid, IconButton, Typography } from '@mui/material'
+import { Backdrop, Box, Button, CircularProgress, Grid, IconButton, Link, Paper, Typography } from '@mui/material'
 import React from 'react'
+
 import ListIcon from '@mui/icons-material/List';
 import MenuOpenIcon from '@mui/icons-material/MenuOpen';
+import ArticleOutlinedIcon from '@mui/icons-material/ArticleOutlined';
+
 import getBrackPointResolution from '@/lib/services/BreakPointResolusion';
 import MenuDrawer from '@/lib/components/pageComponent/courses/MenuDrawer';
 import { DrawerMenuItem } from "@/lib/types/PageDrawer";
@@ -127,7 +130,7 @@ const CoursesPage = () => {
   }
 
   return (
-    <Box sx={{ display: 'flex', width: '100%', gap: 0 }}>
+    <Box sx={{ display: 'flex', width: '100%', height: '100%', gap: 0 }}>
       {/* Page-scoped drawer at the left within this page area */}
       <MenuDrawer
         isOpen={open}
@@ -165,39 +168,64 @@ const CoursesPage = () => {
             columnGap: 1,
             rowGap: 1,
             minWidth: 0,
-            maxWidth: '100%'
+            maxWidth: '100%',
           }}
         >
           <IconButton size='large' color='inherit' sx={{ mr: 1 }} onClick={open ? handleDrawerClose : handleDrawerOpen}>
             {open ? <MenuOpenIcon /> : <ListIcon />}
           </IconButton>
-          หลักสูตรปี {currentCourseYearID ? courseYear.find(cy => cy.id === currentCourseYearID)?.year : 'ไม่ระบุ'}
-          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, ml: { xs: 0, sm: 2 } }}>
-            <Button
-              variant="outlined"
-              onClick={handleChangeCourse}
-              color={courseYear.find(cy => cy.id === currentCourseYearID)?.status === 'DRAFT' ? 'success' : 'primary'}
-              sx={{ whiteSpace: 'nowrap' }}
-            >
-              {courseYear.find(cy => cy.id === currentCourseYearID)?.status === 'DRAFT' ? 'เผยแพร่หลักสูตร' : 'ตั้งเป็นร่าง'}
-            </Button>
-            <Button variant="outlined" color="error" onClick={handleDeleteCourse} sx={{ whiteSpace: 'nowrap' }}>
-              ลบหลักสูตร
-            </Button>
-          </Box>
+          {currentCourseYearID ?
+            <>
+              หลักสูตรปี {courseYear.find(cy => cy.id === currentCourseYearID)?.year}
+              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, ml: { xs: 0, sm: 2 } }}>
+                <Button
+                  variant="outlined"
+                  onClick={handleChangeCourse}
+                  color={courseYear.find(cy => cy.id === currentCourseYearID)?.status === 'DRAFT' ? 'success' : 'primary'}
+                  sx={{ whiteSpace: 'nowrap' }}
+                >
+                  {courseYear.find(cy => cy.id === currentCourseYearID)?.status === 'DRAFT' ? 'เผยแพร่หลักสูตร' : 'ตั้งเป็นร่าง'}
+                </Button>
+                <Button variant="outlined" color="error" onClick={handleDeleteCourse} sx={{ whiteSpace: 'nowrap' }}>
+                  ลบหลักสูตร
+                </Button>
+              </Box>
+            </>
+            : <></>
+          }
         </Typography>
-        <FeeSection
-          courseYearId={currentCourseYearID}
-          courseFee={courseFee}
-          onUpdated={(fee) => setCourseFee(fee)}
-        />
-        <SubjectSection
-          courseYearId={currentCourseYearID}
-          courseYearYear={currentCourseYearID ? courseYear.find(cy => cy.id === currentCourseYearID)?.year ?? null : null}
-        />
+        {currentCourseYearID ?
+          <>
+            <FeeSection
+              courseYearId={currentCourseYearID}
+              courseFee={courseFee}
+              onUpdated={(fee) => setCourseFee(fee)}
+            />
+            <SubjectSection
+              courseYearId={currentCourseYearID}
+              courseYearYear={currentCourseYearID ? courseYear.find(cy => cy.id === currentCourseYearID)?.year ?? null : null}
+            />
+          </> :
+          <>
+            <Paper elevation={5} sx={{ px: 2, py: 10, display: 'flex', justifyContent: 'center', alignItems: 'center', bgcolor: '#f5f5f5ff' }}>
+              <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
+                <ArticleOutlinedIcon sx={{ fontSize: 48 }} />
+                <Box>
+                  <Typography variant='h6' sx={{ textAlign: 'center' }}>
+                    ไม่พบหลักสูตร
+                  </Typography>
+                  <Typography variant='h6' sx={{ textAlign: 'center' }}>
+                    กรุณา<Link color='primary' sx={{ fontWeight: 'bold', fontSize: '1.1rem', cursor: 'pointer', px: 1 }} onClick={() => setOpenNewCourseModal(true)}>สร้างหลักสูตร</Link>ใหม่
+                  </Typography>
+                </Box>
+              </Box>
+            </Paper>
+          </>
+        }
       </Box>
+
       <Backdrop
-        sx={(theme) => ({ zIndex: theme.zIndex.drawer + 1 })}
+        sx={(theme) => ({ zIndex: theme.zIndex.drawer + 100 })}
         open={loading}
       >
         <CircularProgress />

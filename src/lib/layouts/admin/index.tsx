@@ -22,7 +22,7 @@ const AdminLayoutInner = ({ children }: { children: React.ReactNode }) => {
             handleDrawerTransitionEnd={handleTransitionEnd}
           />
         </Grid>
-        <Grid size={{ xs: 12, md: 8.5, lg: 9.5, xl: 10 }} sx={{ maxHeight: 'calc(100vh - 64px)', overflowY: 'auto' }}>
+        <Grid size={{ xs: 12, md: 8.5, lg: 9.5, xl: 10 }} sx={{ height: 'calc(100vh - 64px)', overflowY: 'auto' }}>
           {children}
         </Grid>
       </Grid>
