@@ -29,17 +29,17 @@ export async function middleware(req: any) {
     }
 
     // Validate token by calling internal API. If invalid, redirect home.
-    try {
-      const validateUrl = new URL("/api/invite/accept", req.url);
-      validateUrl.searchParams.set("token", token);
-      const res = await fetch(validateUrl, { method: "GET" });
-      if (!res.ok) {
-        return NextResponse.redirect(new URL("/", req.url));
-      }
-    } catch (e) {
-      // On any error validating token, fail closed
-      return NextResponse.redirect(new URL("/", req.url));
-    }
+    // try {
+    //   const validateUrl = new URL("/api/invite/accept", req.url);
+    //   validateUrl.searchParams.set("token", token);
+    //   const res = await fetch(validateUrl, { method: "GET" });
+    //   if (!res.ok) {
+    //     return NextResponse.redirect(new URL("/", req.url));
+    //   }
+    // } catch (e) {
+    //   // On any error validating token, fail closed
+    //   return NextResponse.redirect(new URL("/", req.url));
+    // }
   }
 
   // Account management page access control

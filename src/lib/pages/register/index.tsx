@@ -1,13 +1,14 @@
 'use client'
 
 import React from "react";
-import { Box, Paper, Typography, TextField, Button, Alert, Stack, CircularProgress } from "@mui/material";
+import { Box, Paper, Typography, TextField, Button, Alert, Stack, CircularProgress, Backdrop } from "@mui/material";
 import { useRouter, useSearchParams } from "next/navigation";
 
 const RegisterPage = () => {
     const router = useRouter();
     const searchParams = useSearchParams();
     const token = searchParams.get("token") || "";
+    const [isLoading, setIsLoading] = React.useState(true);
 
     const [title, setTitle] = React.useState("");
     const [firstName, setFirstName] = React.useState("");
@@ -19,6 +20,8 @@ const RegisterPage = () => {
     const [success, setSuccess] = React.useState<string | null>(null);
     const [inviteExpired, setInviteExpired] = React.useState(false);
     const [countdown, setCountdown] = React.useState(10);
+
+    const [isTokenValid, setIsTokenValid] = React.useState(true);
 
     const canSubmit = React.useMemo(() => {
         return (
@@ -36,8 +39,13 @@ const RegisterPage = () => {
         const loadInvite = async () => {
             if (!token) return;
             try {
+                setIsLoading(true);
                 const res = await fetch(`/api/invite/accept?token=${encodeURIComponent(token)}`);
-                if (!res.ok) return; // middleware should have validated, but guard anyway
+                if (!res.ok) {
+                    setError("Error 404: ไม่พบการเชิญของท่าน กรุณาตรวจสอบลิงก์อีกครั้ง หรือติดต่อผู้ดูแลระบบ");
+                    setIsTokenValid(false);
+                    return;
+                } // middleware should have validated, but guard anyway
                 const data = await res.json();
                 const iv = data?.invite || {};
                 if (!ignore) {
@@ -50,7 +58,9 @@ const RegisterPage = () => {
                     }
                 }
             } catch (e) {
-                // no-op; middleware already protects this route
+                setError("เกิดข้อผิดพลาดในการโหลดข้อมูล");
+            } finally {
+                setIsLoading(false);
             }
         };
         loadInvite();
@@ -118,35 +128,35 @@ const RegisterPage = () => {
         }
     };
 
-            return (
-                <Box sx={{ maxWidth: 720, mx: "auto", px: 2, py: 5 }}>
-                    <Paper elevation={3} sx={{ p: 3 }}>
-                    <Typography variant="h4" gutterBottom sx={{ textAlign: "center" }}>
-                        ลงทะเบียนสมาชิกใหม่
-                    </Typography>
-                    <Typography variant="body1" sx={{ textAlign: "center", mb: 2 }}>
-                        กรุณากรอกข้อมูลและตั้งรหัสผ่านเพื่อเปิดใช้งานบัญชีจากคำเชิญ
-                    </Typography>
+    return (
+        <Box sx={{ maxWidth: 720, mx: "auto", px: 2, py: 5 }}>
+            <Paper elevation={3} sx={{ p: 3 }}>
+                <Typography variant="h4" gutterBottom sx={{ textAlign: "center" }}>
+                    ลงทะเบียนสมาชิกใหม่
+                </Typography>
+                <Typography variant="body1" sx={{ textAlign: "center", mb: 2, display: isTokenValid ? "block" : "none" }}>
+                    กรุณากรอกข้อมูลและตั้งรหัสผ่านเพื่อเปิดใช้งานบัญชีจากคำเชิญ
+                </Typography>
 
-                    {error && (
-                        <Alert severity="error" sx={{ mb: 2 }}>
-                            {error}
-                        </Alert>
-                    )}
-                    {success && (
-                        <Alert severity="success" sx={{ mb: 2 }}>
-                            {success}
-                        </Alert>
-                    )}
+                {error && (
+                    <Alert severity="error" sx={{ mb: 2 }}>
+                        {error}
+                    </Alert>
+                )}
+                {success && (
+                    <Alert severity="success" sx={{ mb: 2 }}>
+                        {success}
+                    </Alert>
+                )}
 
-                    {inviteExpired && (
-                        <Alert severity="warning" sx={{ mb: 2 }}>
-                            คำเชิญนี้หมดอายุแล้ว ระบบจะพาคุณกลับไปหน้าแรกภายใน {countdown} วินาที
-                        </Alert>
-                    )}
+                {inviteExpired && (
+                    <Alert severity="warning" sx={{ mb: 2 }}>
+                        คำเชิญนี้หมดอายุแล้ว ระบบจะพาคุณกลับไปหน้าแรกภายใน {countdown} วินาที
+                    </Alert>
+                )}
 
-                                {!inviteExpired && (
-                        <Box component="form" onSubmit={onSubmit} noValidate>
+                {!inviteExpired && isTokenValid ? (
+                    <Box component="form" onSubmit={onSubmit} noValidate>
                         <Stack spacing={2}>
                             {/* Keep token hidden but present */}
                             <input type="hidden" name="token" value={token} />
@@ -215,16 +225,30 @@ const RegisterPage = () => {
                                 )}
                             </Button>
                         </Stack>
-                                </Box>
-                    )}
-
-                    {inviteExpired && (
-                        <Box sx={{ display: "flex", justifyContent: "center", mt: 2 }}>
-                            <Button variant="outlined" onClick={() => router.push("/")}>กลับไปหน้าแรก</Button>
-                        </Box>
-                    )}
-                        </Paper>
                     </Box>
+                ) : (
+                    <>
+                        <Box sx={{ display: "flex", justifyContent: "center", mt: 2 }}>
+                            <Button variant="outlined" fullWidth onClick={() => router.push("/")}>กลับไปหน้าแรก</Button>
+                        </Box>
+                    </>
+                )}
+
+
+
+                {inviteExpired && (
+                    <Box sx={{ display: "flex", justifyContent: "center", mt: 2 }}>
+                        <Button variant="outlined" onClick={() => router.push("/")}>กลับไปหน้าแรก</Button>
+                    </Box>
+                )}
+            </Paper>
+            <Backdrop
+                sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
+                open={isLoading}
+            >
+                <CircularProgress color="inherit" />
+            </Backdrop>
+        </Box>
     );
 };
 
