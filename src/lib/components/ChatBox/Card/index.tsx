@@ -70,7 +70,7 @@ const ChatBoxCard = () => {
                         <WarningAmberIcon /> ทดสอบการใช้งาน จะมีการเก็บประวัติแชท
                     </Typography>
                 </Typography>
-                <IconButton onClick={handleMenuClick} color="inherit" size="small">
+                <IconButton onClick={handleMenuClick} color="default" size="small">
                     <MoreVertIcon />
                 </IconButton>
                 <Menu
