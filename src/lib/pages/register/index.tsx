@@ -118,6 +118,18 @@ const RegisterPage = () => {
                 return;
             }
 
+            const responseData = await res.json();
+
+            const embedres = await fetch("/api/embed", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ teacher_id: [responseData.user_id] }),
+            });
+
+            if (!embedres.ok) {
+                setError("ลงทะเบียนสำเร็จ แต่เกิดข้อผิดพลาดกรุณาติดต่อผู้ดูแลระบบ");
+            }
+
             setSuccess("ลงทะเบียนสำเร็จ กำลังนำคุณไปยังหน้าเข้าสู่ระบบ…");
             // หน่วงเวลาเล็กน้อยเพื่อให้ผู้ใช้เห็นข้อความสำเร็จ
             setTimeout(() => router.push("/"), 1200);

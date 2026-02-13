@@ -1,29 +1,24 @@
 import nodemailer from "nodemailer";
+import { SendMailProps } from "@/lib/types/nodeMailer";
 
-const SendMail = ({
-  from,
+const transporter = nodemailer.createTransport({
+  host: process.env.EMAIL_SERVER_HOST as string,
+  port: Number(process.env.EMAIL_SERVER_PORT),
+  secure: process.env.EMAIL_SERVER_SECURE === "true",
+  auth: {
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_SERVER_PASSWORD,
+  },
+});
+
+const SendMail = async ({
+  from = process.env.EMAIL_USER_DISPLAY || (process.env.EMAIL_USER as string),
   to,
   subject,
   text,
   html,
-}: {
-  from: string;
-  to: string;
-  subject: string;
-  text?: string;
-  html?: string;
-}) => {
+}: SendMailProps) => {
   try {
-    const transporter = nodemailer.createTransport({
-      host: process.env.EMAIL_SERVER_HOST as string,
-      port: Number(process.env.EMAIL_SERVER_PORT),
-      secure: process.env.EMAIL_SERVER_SECURE === "true",
-      auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_SERVER_PASSWORD,
-      },
-    });
-
     const mailOptions: {
       from: string;
       to: string;

@@ -34,21 +34,26 @@ export async function GET() {
           },
         },
       },
-      orderBy: { createdAt: 'desc' },
+      orderBy: { createdAt: "desc" },
     });
 
     // Map to UI-friendly shape and stringify id/date
     const mapped = invites.map((inv) => ({
       id: inv.id.toString(),
-      title: inv.title ?? '',
-      firstName: inv.firstName ?? '',
-      lastName: inv.lastName ?? '',
+      title: inv.title ?? "",
+      firstName: inv.firstName ?? "",
+      lastName: inv.lastName ?? "",
       email: inv.email,
       role: inv.role,
       status: inv.status,
-      invitedBy: [inv.invitedBy?.title, inv.invitedBy?.firstName, inv.invitedBy?.lastName]
-        .filter(Boolean)
-        .join(' ') || '-',
+      invitedBy:
+        [
+          inv.invitedBy?.title,
+          inv.invitedBy?.firstName,
+          inv.invitedBy?.lastName,
+        ]
+          .filter(Boolean)
+          .join(" ") || "-",
       createdAt: inv.createdAt.toISOString(),
     }));
 
@@ -57,7 +62,7 @@ export async function GET() {
     console.error("Error fetching invites:", error);
     return NextResponse.json(
       { message: "Failed to fetch invites" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -72,26 +77,36 @@ export async function DELETE(request: Request) {
     if (!ids || !Array.isArray(ids) || ids.length === 0) {
       return NextResponse.json(
         { message: "Invalid or empty ids array" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
-    const numericIds = ids.map((id) => Number(id)).filter((n) => !Number.isNaN(n));
+    const numericIds = ids
+      .map((id) => Number(id))
+      .filter((n) => !Number.isNaN(n));
     if (numericIds.length === 0) {
       return NextResponse.json(
         { message: "No valid ids provided" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
-    const deleted = await db.invite.deleteMany({ where: { id: { in: numericIds } } });
+    const deleted = await db.invite.deleteMany({
+      where: { id: { in: numericIds } },
+    });
     return NextResponse.json(
-      { message: `Successfully deleted ${deleted.count} invite(s)`, deletedCount: deleted.count },
-      { status: 200 }
+      {
+        message: `Successfully deleted ${deleted.count} invite(s)`,
+        deletedCount: deleted.count,
+      },
+      { status: 200 },
     );
   } catch (error) {
     console.error("Delete invites error:", error);
-    return NextResponse.json({ message: "Internal Server Error" }, { status: 500 });
+    return NextResponse.json(
+      { message: "Internal Server Error" },
+      { status: 500 },
+    );
   }
 }
 
@@ -105,15 +120,17 @@ export async function PUT(request: Request) {
     if (!ids || !Array.isArray(ids) || ids.length === 0) {
       return NextResponse.json(
         { message: "Invalid or empty ids array" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
-    const numericIds = ids.map((id) => Number(id)).filter((n) => !Number.isNaN(n));
+    const numericIds = ids
+      .map((id) => Number(id))
+      .filter((n) => !Number.isNaN(n));
     if (numericIds.length === 0) {
       return NextResponse.json(
         { message: "No valid ids provided" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -131,9 +148,9 @@ export async function PUT(request: Request) {
       },
     });
 
-  let resent = 0;
-  let regenerated = 0; // count of EXPIRED -> PENDING with new token
-  let skipped = 0; // ACCEPTED
+    let resent = 0;
+    let regenerated = 0; // count of EXPIRED -> PENDING with new token
+    let skipped = 0; // ACCEPTED
 
     for (const inv of invites) {
       // If ACCEPTED -> skip resend
@@ -145,7 +162,9 @@ export async function PUT(request: Request) {
       // Determine token and update if EXPIRED
       let token = inv.token;
       if (inv.status === "EXPIRED") {
-        token = Math.random().toString(36).substring(2) + Math.random().toString(36).substring(2);
+        token =
+          Math.random().toString(36).substring(2) +
+          Math.random().toString(36).substring(2);
         await db.invite.update({
           where: { id: inv.id },
           data: {
@@ -159,10 +178,12 @@ export async function PUT(request: Request) {
 
       const link = `${process.env.INVITE_ACCEPT_URL}?token=${token}`;
       try {
-        const fromAddress = (process.env.EMAIL_FROM || process.env.EMAIL_USER || "no-reply@example.com") as string;
-        const fullName = [inv.title, inv.firstName, inv.lastName].filter(Boolean).join(" ");
+        const fullName = [inv.title, inv.firstName, inv.lastName]
+          .filter(Boolean)
+          .join(" ");
         const role = inv.role;
-        const subject = "คุณได้รับเชิญให้เข้าร่วมใช้งานเว็บจัดการข้อมูล ECT Chatbot";
+        const subject =
+          "คุณได้รับเชิญให้เข้าร่วมใช้งานเว็บจัดการข้อมูล ECT Chatbot";
         const text =
           `สวัสดี ${fullName || ""},\n\n` +
           `${role && role !== "TEACHER" ? `คุณได้รับเชิญให้เข้าร่วมเป็น ${role} บนเว็บจัดการข้อมูล ECT Chatbot.` : "คุณได้รับเชิญเพื่อใช้งานเว็บจัดการข้อมูล ECT Chatbot."}\n\n` +
@@ -225,7 +246,7 @@ export async function PUT(request: Request) {
   </html>`;
 
         // Fire-and-forget
-        SendMail({ from: fromAddress, to: inv.email, subject, text, html });
+        SendMail({ to: inv.email, subject, text, html });
         resent += 1;
       } catch (mailErr) {
         console.log("Failed to queue resend invitation email:", mailErr);
@@ -234,11 +255,14 @@ export async function PUT(request: Request) {
 
     return NextResponse.json(
       { message: "Resend processed", resent, regenerated, skipped },
-      { status: 200 }
+      { status: 200 },
     );
   } catch (error) {
     console.error("Resend invites error:", error);
-    return NextResponse.json({ message: "Internal Server Error" }, { status: 500 });
+    return NextResponse.json(
+      { message: "Internal Server Error" },
+      { status: 500 },
+    );
   }
 }
 
@@ -253,14 +277,14 @@ export async function POST(req: Request) {
     if (!email || typeof email !== "string") {
       return NextResponse.json(
         { message: "Email is required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
     const invitedById = Number(inviterID);
     if (!invitedById || Number.isNaN(invitedById)) {
       return NextResponse.json(
         { message: "inviterID is required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -273,7 +297,7 @@ export async function POST(req: Request) {
     if (existingUserEmail) {
       return NextResponse.json(
         { message: "User with this email already exists" },
-        { status: 409 }
+        { status: 409 },
       );
     }
 
@@ -314,7 +338,7 @@ export async function POST(req: Request) {
     if (existingInvite) {
       return NextResponse.json(
         { message: "Active invitation already exists for this email" },
-        { status: 409 }
+        { status: 409 },
       );
     }
 
@@ -337,7 +361,7 @@ export async function POST(req: Request) {
       if (!allowedRoles.includes(role)) {
         return NextResponse.json(
           { message: "Invalid role provided" },
-          { status: 400 }
+          { status: 400 },
         );
       }
       inviteData.role = role;
@@ -347,7 +371,9 @@ export async function POST(req: Request) {
 
     // Send invitation email (best-effort)
     try {
-      const fromAddress = (process.env.EMAIL_FROM || process.env.EMAIL_USER || "no-reply@example.com") as string;
+      const fromAddress = (process.env.EMAIL_FROM ||
+        process.env.EMAIL_USER ||
+        "no-reply@example.com") as string;
       const fullName = [title, firstName, lastName].filter(Boolean).join(" ");
       const subject =
         "คุณได้รับเชิญให้เข้าร่วมใช้งานเว็บจัดการข้อมูล ECT Chatbot";
@@ -435,12 +461,12 @@ export async function POST(req: Request) {
 
     return NextResponse.json(
       { message: "invite successful", data: body },
-      { status: 200 }
+      { status: 200 },
     );
   } catch (error) {
     return NextResponse.json(
       { message: "Error during create invitetation" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

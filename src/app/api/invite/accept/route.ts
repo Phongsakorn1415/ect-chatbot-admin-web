@@ -11,7 +11,7 @@ export async function GET(request: Request) {
     if (!token) {
       return NextResponse.json(
         { error: "Missing token parameter" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -21,7 +21,7 @@ export async function GET(request: Request) {
     if (!invite) {
       return NextResponse.json(
         { error: "Invalid invite token" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -40,7 +40,7 @@ export async function GET(request: Request) {
   } catch (error) {
     return NextResponse.json(
       { error: "Internal Server Error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -58,7 +58,7 @@ export async function POST(request: Request) {
     if (!invite) {
       return NextResponse.json(
         { error: "Invalid invite token" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -66,13 +66,13 @@ export async function POST(request: Request) {
     if (invite.status === "EXPIRED") {
       return NextResponse.json(
         { error: "Invite token has expired" },
-        { status: 410 }
+        { status: 410 },
       );
     }
     if (invite.status === "ACCEPTED") {
       return NextResponse.json(
         { error: "Invite has already been used" },
-        { status: 409 }
+        { status: 409 },
       );
     }
 
@@ -80,7 +80,7 @@ export async function POST(request: Request) {
     if (!password) {
       return NextResponse.json(
         { error: "Password is required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -91,27 +91,24 @@ export async function POST(request: Request) {
     if (existingUser) {
       return NextResponse.json(
         { error: "User with this email already exists" },
-        { status: 409 }
+        { status: 409 },
       );
     }
 
     //Check title, firstName, lastName
-    if(!title && !invite.title){
-      return NextResponse.json(
-        { error: "Title is required" },
-        { status: 400 }
-      );
+    if (!title && !invite.title) {
+      return NextResponse.json({ error: "Title is required" }, { status: 400 });
     }
-    if(!firstName && !invite.firstName){
+    if (!firstName && !invite.firstName) {
       return NextResponse.json(
         { error: "First name is required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
-    if(!lastName && !invite.lastName){
+    if (!lastName && !invite.lastName) {
       return NextResponse.json(
         { error: "Last name is required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -124,7 +121,7 @@ export async function POST(request: Request) {
         email: invite.email,
         passwordHash: passwordHash,
         title: title || invite.title,
-        firstName : firstName || invite.firstName,
+        firstName: firstName || invite.firstName,
         lastName: lastName || invite.lastName,
         role: invite.role,
       },
@@ -136,12 +133,14 @@ export async function POST(request: Request) {
       data: { status: "ACCEPTED" },
     });
 
-    return NextResponse.json({ message: "Invite accepted" });
-
+    return NextResponse.json({
+      message: "Invite accepted",
+      user_id: newUser.id,
+    });
   } catch (error) {
     return NextResponse.json(
       { error: "Internal Server Error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
