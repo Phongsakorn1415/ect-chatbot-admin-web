@@ -2,12 +2,12 @@ import { NextResponse } from "next/server";
 
 export async function POST(req: Request) {
   try {
-    const { prompt, chat_history } = await req.json();
+    const { prompt, chat_history, course_year } = await req.json();
 
     if (!prompt) {
       return NextResponse.json(
         { error: "Prompt is required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -24,6 +24,7 @@ export async function POST(req: Request) {
       body: JSON.stringify({
         prompt: prompt,
         chat_history: history,
+        course_year: course_year,
         history_limit: 5, // You can adjust this default or pass it from frontend
       }),
     });
@@ -38,7 +39,7 @@ export async function POST(req: Request) {
     console.error("Error in chat proxy:", error);
     return NextResponse.json(
       { error: "Failed to connect to AI service" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -55,7 +56,7 @@ export async function GET() {
     console.error("Error in chat health check:", error);
     return NextResponse.json(
       { error: "Failed to connect to AI service" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

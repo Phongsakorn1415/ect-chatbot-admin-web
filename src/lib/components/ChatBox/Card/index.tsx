@@ -1,4 +1,4 @@
-import { Box, Divider, Paper, Typography, TextField, InputAdornment, IconButton, Backdrop, CircularProgress, Avatar, Menu, MenuItem, ListItemIcon, ListItemText, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions, Button } from '@mui/material'
+import { Box, Divider, Paper, Typography, TextField, InputAdornment, IconButton, Backdrop, CircularProgress, Avatar, Menu, MenuItem, ListItemIcon, ListItemText, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions, Button, FormControl, Select } from '@mui/material'
 import SendIcon from '@mui/icons-material/Send'
 import SmartToyIcon from '@mui/icons-material/SmartToy'
 import PersonIcon from '@mui/icons-material/Person'
@@ -17,6 +17,26 @@ const ChatBoxCard = () => {
     const { messages, isOnline, isLoading, isSending, sendMessage, clearHistory } = useChat()
     const [inputValue, setInputValue] = useState('')
     const messagesEndRef = useRef<HTMLDivElement>(null)
+    const [courseYears, setCourseYears] = useState<any[]>([])
+    const [selectedYear, setSelectedYear] = useState<number | null>(null)
+
+    useEffect(() => {
+        const fetchCourseYears = async () => {
+            try {
+                const res = await fetch('/api/course/course-year?onlyPublic=true')
+                if (res.ok) {
+                    const data = await res.json()
+                    setCourseYears(data.data)
+                    if (data.data.length > 0) {
+                        setSelectedYear(data.data[0].year)
+                    }
+                }
+            } catch (error) {
+                console.error("Failed to fetch course years", error)
+            }
+        }
+        fetchCourseYears()
+    }, [])
 
     // Menu State
     const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null)
@@ -35,7 +55,8 @@ const ChatBoxCard = () => {
 
     const handleSend = () => {
         if (!inputValue.trim()) return
-        sendMessage(inputValue)
+        if (!inputValue.trim()) return
+        sendMessage(inputValue, selectedYear || undefined)
         setInputValue('')
     }
 
@@ -147,6 +168,31 @@ const ChatBoxCard = () => {
             <Divider />
 
             <Box sx={{ p: 1, bgcolor: 'background.paper' }}>
+                <FormControl fullWidth size="small" sx={{ mb: 1 }}>
+                    <Select
+                        value={selectedYear || ''}
+                        onChange={(e) => setSelectedYear(Number(e.target.value))}
+                        displayEmpty
+                        variant="standard"
+                        disableUnderline
+                        sx={{ fontSize: '0.875rem' }}
+                        renderValue={(selected) => {
+                            if (!selected) {
+                                return <Typography variant="caption" color="text.secondary">เลือกหลักสูตร</Typography>;
+                            }
+                            return <Typography variant="caption">หลักสูตร {selected}</Typography>;
+                        }}
+                    >
+                        <MenuItem value="">
+                            <em>None</em>
+                        </MenuItem>
+                        {courseYears.map((year) => (
+                            <MenuItem key={year.id} value={year.year}>
+                                {year.year}
+                            </MenuItem>
+                        ))}
+                    </Select>
+                </FormControl>
                 <TextField
                     fullWidth
                     size="small"

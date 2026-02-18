@@ -12,7 +12,7 @@ export type UseChatReturn = {
     isOnline: boolean;
     isLoading: boolean;
     isSending: boolean;
-    sendMessage: (msg: string) => Promise<void>;
+    sendMessage: (msg: string, courseYear?: number) => Promise<void>;
     clearHistory: () => void;
 }
 
@@ -74,7 +74,7 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
     }, []);
 
     const sendMessage = useCallback(
-        async (msg: string) => {
+        async (msg: string, courseYear?: number) => {
             if (!msg.trim() || isSending) return;
 
             const newMessage: Message = { role: "user", content: msg };
@@ -94,6 +94,7 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
                             role: m.role === "user" ? "user" : "assistant",
                             content: m.content,
                         })),
+                        course_year: courseYear,
                     }),
                 });
 

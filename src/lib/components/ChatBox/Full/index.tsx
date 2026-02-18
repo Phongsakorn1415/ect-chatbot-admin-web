@@ -1,4 +1,4 @@
-import { Box, Divider, TextField, Typography, InputAdornment, IconButton, Backdrop, CircularProgress, Paper, Avatar, Menu, MenuItem, ListItemIcon, ListItemText, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions, Button } from '@mui/material'
+import { Box, Divider, TextField, Typography, InputAdornment, IconButton, Backdrop, CircularProgress, Paper, Avatar, Menu, MenuItem, ListItemIcon, ListItemText, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions, Button, FormControl, Select } from '@mui/material'
 import SendIcon from '@mui/icons-material/Send'
 import SignalWifiOffIcon from '@mui/icons-material/SignalWifiOff'
 import SmartToyIcon from '@mui/icons-material/SmartToy'
@@ -17,6 +17,28 @@ const ChatBoxFull = () => {
     const { messages, isOnline, isLoading, isSending, sendMessage, clearHistory } = useChat()
     const [inputValue, setInputValue] = useState('')
     const messagesEndRef = useRef<HTMLDivElement>(null)
+    const [courseYears, setCourseYears] = useState<any[]>([])
+    const [selectedYear, setSelectedYear] = useState<number | null>(null)
+
+    useEffect(() => {
+        const fetchCourseYears = async () => {
+            try {
+                const res = await fetch('/api/course/course-year?onlyPublic=true')
+                if (res.ok) {
+                    const data = await res.json()
+                    setCourseYears(data.data)
+                    // Auto select the latest year if available? 
+                    // Let's keep it optional per user request "allow select", maybe valid to not select.
+                    if (data.data.length > 0) {
+                        setSelectedYear(data.data[0].year)
+                    }
+                }
+            } catch (error) {
+                console.error("Failed to fetch course years", error)
+            }
+        }
+        fetchCourseYears()
+    }, [])
 
     // Menu State
     const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null)
@@ -35,7 +57,7 @@ const ChatBoxFull = () => {
 
     const handleSend = () => {
         if (!inputValue.trim()) return
-        sendMessage(inputValue)
+        sendMessage(inputValue, selectedYear || undefined)
         setInputValue('')
     }
 
@@ -143,7 +165,31 @@ const ChatBoxFull = () => {
                 <div ref={messagesEndRef} />
             </Box>
 
-            <Box sx={{ p: 2, borderTop: 1, borderColor: 'divider' }}>
+            <Box sx={{ p: 2, borderTop: 1, borderColor: 'divider', display: 'flex', flexDirection: { xs: 'column', lg: 'row' } }}>
+                <FormControl size="small" sx={{ mb: { xs: 1, lg: 0 }, mr: { xs: 0, lg: 1 }, width: { xs: '100%', lg: '20%' } }}>
+                    <Select
+                        value={selectedYear || ''}
+                        onChange={(e) => setSelectedYear(Number(e.target.value))}
+                        sx={{ height: '100%' }}
+                        displayEmpty
+                        renderValue={(selected) => {
+                            if (!selected) {
+                                return <Typography color="text.secondary">เลือกหลักสูตร</Typography>;
+                            }
+                            return `หลักสูตร ${selected}`;
+                        }}
+
+                    >
+                        <MenuItem value="">
+                            <em>None</em>
+                        </MenuItem>
+                        {courseYears.map((year) => (
+                            <MenuItem key={year.id} value={year.year}>
+                                {year.year}
+                            </MenuItem>
+                        ))}
+                    </Select>
+                </FormControl>
                 <TextField
                     fullWidth
                     multiline
