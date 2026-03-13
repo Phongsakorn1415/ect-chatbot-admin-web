@@ -24,11 +24,6 @@ export interface InviteModalProps {
 	onNotify?: (message: string, severity: 'error' | 'warning' | 'info' | 'success') => void;
 }
 
-const ROLE_OPTIONS: { value: Role; label: string }[] = [
-	{ value: "TEACHER", label: "Teacher" },
-	{ value: "ADMIN", label: "Admin" },
-];
-
 const initialFormState = {
 	email: "",
 	title: "",
@@ -44,6 +39,13 @@ const InviteModal: React.FC<InviteModalProps> = ({ open, onClose, onInvited, onN
 	const [form, setForm] = React.useState(initialFormState);
 	const [submitting, setSubmitting] = React.useState(false);
 	// alerts are delegated to parent via onNotify
+
+	const ROLE_OPTIONS: { value: Role; label: string }[] = session?.user.role === "SUPER_ADMIN" ? [
+		{ value: "TEACHER", label: "Teacher" },
+		{ value: "ADMIN", label: "Admin" },
+	] : [
+		{ value: "TEACHER", label: "Teacher" },
+	];
 
 	React.useEffect(() => {
 		if (!open) {
@@ -115,63 +117,63 @@ const InviteModal: React.FC<InviteModalProps> = ({ open, onClose, onInvited, onN
 			</DialogTitle>
 			<DialogContent>
 				<Box component="form" onSubmit={handleSubmit} noValidate sx={{ mt: 1 }}>
-											<Box sx={{ display: 'grid', gridTemplateColumns: '1fr', gap: 2 }}>
-												<TextField
-													required
-													fullWidth
-													type="email"
-													label="อีเมลผู้รับคำเชิญ"
-													name="email"
-													value={form.email}
-													onChange={handleChange}
-													placeholder="name@example.com"
-												/>
+					<Box sx={{ display: 'grid', gridTemplateColumns: '1fr', gap: 2 }}>
+						<TextField
+							required
+							fullWidth
+							type="email"
+							label="อีเมลผู้รับคำเชิญ"
+							name="email"
+							value={form.email}
+							onChange={handleChange}
+							placeholder="name@example.com"
+						/>
 
-															<Box sx={{ display: 'grid', gap: 2, gridTemplateColumns: { xs: '1fr', sm: 'repeat(3, 1fr)' } }}>
-																<TextField
-																	fullWidth
-																	label="คำนำหน้า (ไม่บังคับ)"
-																	name="title"
-																	value={form.title}
-																	onChange={handleChange}
-																	placeholder="เช่น นาย, นาง, ดร."
-																/>
+						<Box sx={{ display: 'grid', gap: 2, gridTemplateColumns: { xs: '1fr', sm: 'repeat(3, 1fr)' } }}>
+							<TextField
+								fullWidth
+								label="คำนำหน้า (ไม่บังคับ)"
+								name="title"
+								value={form.title}
+								onChange={handleChange}
+								placeholder="เช่น นาย, นาง, ดร."
+							/>
 
-													<TextField
-														fullWidth
-														label="ชื่อ (ไม่บังคับ)"
-														name="firstName"
-														value={form.firstName}
-														onChange={handleChange}
-													/>
+							<TextField
+								fullWidth
+								label="ชื่อ (ไม่บังคับ)"
+								name="firstName"
+								value={form.firstName}
+								onChange={handleChange}
+							/>
 
-													<TextField
-														fullWidth
-														label="นามสกุล (ไม่บังคับ)"
-														name="lastName"
-														value={form.lastName}
-														onChange={handleChange}
-													/>
-												</Box>
+							<TextField
+								fullWidth
+								label="นามสกุล (ไม่บังคับ)"
+								name="lastName"
+								value={form.lastName}
+								onChange={handleChange}
+							/>
+						</Box>
 
-												<Box sx={{ display: 'grid', gap: 2, gridTemplateColumns: '1fr' }}>
-													<TextField
-														select
-														fullWidth
-														label="Role"
-														name="role"
-														value={form.role}
-														onChange={handleChange}
-														helperText="ค่าเริ่มต้นเป็น Teacher"
-													>
-														{ROLE_OPTIONS.map((r) => (
-															<MenuItem key={r.value} value={r.value}>
-																{r.label}
-															</MenuItem>
-														))}
-													</TextField>
-												</Box>
-											</Box>
+						<Box sx={{ display: 'grid', gap: 2, gridTemplateColumns: '1fr' }}>
+							<TextField
+								select
+								fullWidth
+								label="Role"
+								name="role"
+								value={form.role}
+								onChange={handleChange}
+								helperText={session?.user.role === "SUPER_ADMIN" ? "ค่าเริ่มต้นเป็น Teacher" : false}
+							>
+								{ROLE_OPTIONS.map((r) => (
+									<MenuItem key={r.value} value={r.value}>
+										{r.label}
+									</MenuItem>
+								))}
+							</TextField>
+						</Box>
+					</Box>
 
 				</Box>
 			</DialogContent>
