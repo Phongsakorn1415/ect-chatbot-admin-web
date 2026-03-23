@@ -54,7 +54,10 @@ const MainDrawer = ({ isOpen, HandleDrawerClose, handleDrawerTransitionEnd }: Ma
         <Paper elevation={0} sx={{ ':hover': { bgcolor: 'action.hover', cursor: 'pointer' }, p: 1, borderRadius: 2, display: 'flex', alignItems: 'center', bgcolor: pathname === '/admin' ? 'action.selected' : 'inherit' }} onClick={() => handleNavigate('/admin')}>หน้าแรก</Paper>
         <Paper elevation={0} sx={{ ':hover': { bgcolor: 'action.hover', cursor: 'pointer' }, p: 1, borderRadius: 2, bgcolor: pathname.startsWith('/admin/courses') ? 'action.selected' : 'inherit' }} onClick={() => handleNavigate('/admin/courses')}>หลักสูตร</Paper>
         {session.user?.role !== "TEACHER" && (
-          <Paper elevation={0} sx={{ ':hover': { bgcolor: 'action.hover', cursor: 'pointer' }, p: 1, borderRadius: 2, bgcolor: pathname.startsWith('/admin/accounts') ? 'action.selected' : 'inherit' }} onClick={() => handleNavigate('/admin/accounts')}>บัญชีทั้งหมด</Paper>
+          <>
+            <Paper elevation={0} sx={{ ':hover': { bgcolor: 'action.hover', cursor: 'pointer' }, p: 1, borderRadius: 2, bgcolor: pathname.startsWith('/admin/accounts') ? 'action.selected' : 'inherit' }} onClick={() => handleNavigate('/admin/accounts')}>บัญชีทั้งหมด</Paper>
+            <Paper elevation={0} sx={{ ':hover': { bgcolor: 'action.hover', cursor: 'pointer' }, p: 1, borderRadius: 2, bgcolor: pathname.startsWith('/admin/other') ? 'action.selected' : 'inherit' }} onClick={() => handleNavigate('/admin/other')}>จัดการระบบ</Paper>
+          </>
         )}
       </Box>
     </>
