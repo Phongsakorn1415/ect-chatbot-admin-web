@@ -82,16 +82,16 @@ const ChatBoxCard = () => {
                 >
                     <MenuItem onClick={() => { exportToTxt(messages); handleMenuClose() }}>
                         <ListItemIcon><TextSnippetIcon fontSize="small" /></ListItemIcon>
-                        <ListItemText>Export to TXT</ListItemText>
+                        <ListItemText>บันทึกเป็น TXT</ListItemText>
                     </MenuItem>
                     <MenuItem onClick={() => { exportToCsv(messages); handleMenuClose() }}>
                         <ListItemIcon><TableChartIcon fontSize="small" /></ListItemIcon>
-                        <ListItemText>Export to CSV</ListItemText>
+                        <ListItemText>บันทึกเป็น CSV</ListItemText>
                     </MenuItem>
                     <Divider />
                     <MenuItem onClick={() => { setOpenDialog(true); handleMenuClose() }} sx={{ color: 'error.main' }}>
                         <ListItemIcon><DeleteSweepIcon fontSize="small" color="error" /></ListItemIcon>
-                        <ListItemText>Clear History</ListItemText>
+                        <ListItemText>ล้างประวัติการแชท</ListItemText>
                     </MenuItem>
                 </Menu>
             </Box>
@@ -99,7 +99,7 @@ const ChatBoxCard = () => {
             <Box sx={{ flex: 1, overflowY: 'auto', p: 2, display: 'flex', flexDirection: 'column', gap: 2, bgcolor: '#f5f5f5' }}>
                 {messages.length === 0 && (
                     <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%', opacity: 0.5 }}>
-                        <Typography variant="body2" color="text.secondary">Ask me anything...</Typography>
+                        <Typography variant="body2" color="text.secondary">ถามสิ่งที่อยากรู้ . . .</Typography>
                     </Box>
                 )}
 
@@ -173,12 +173,12 @@ const ChatBoxCard = () => {
                 {isLoading ? (
                     <>
                         <CircularProgress color="inherit" size={30} />
-                        <Typography variant="body2">Connecting...</Typography>
+                        <Typography variant="body2">กำลังเชื่อมต่อ . . .</Typography>
                     </>
                 ) : (
                     <>
                         <SignalWifiOffIcon sx={{ fontSize: 30, color: 'error.main' }} />
-                        <Typography variant="body2" color="error.light">Offline</Typography>
+                        <Typography variant="body2" color="error.light">ออฟไลน์</Typography>
                     </>
                 )}
             </Backdrop>
@@ -191,13 +191,13 @@ const ChatBoxCard = () => {
                 <DialogTitle>{"Clear Chat History?"}</DialogTitle>
                 <DialogContent>
                     <DialogContentText>
-                        Are you sure you want to delete all chat history? This action cannot be undone.
+                        คุณแน่ใจหรือไม่ว่าต้องการลบประวัติการแชททั้งหมด? การดำเนินการนี้ไม่สามารถย้อนกลับได้
                     </DialogContentText>
                 </DialogContent>
                 <DialogActions>
-                    <Button onClick={() => setOpenDialog(false)}>Cancel</Button>
+                    <Button onClick={() => setOpenDialog(false)}>ยกเลิก</Button>
                     <Button onClick={handleClearHistoryConfirm} color="error" autoFocus>
-                        Clear History
+                        ลบประวัติการแชท
                     </Button>
                 </DialogActions>
             </Dialog>
