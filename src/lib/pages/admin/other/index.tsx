@@ -1,16 +1,66 @@
 'use client'
 
-import React, { useState } from 'react'
-import { Box, Typography, Paper, Button, Grid, Divider, CircularProgress, Snackbar, Alert } from '@mui/material'
+import React, { useState, useEffect } from 'react'
+import { Box, Typography, Paper, Button, Grid, Divider, CircularProgress } from '@mui/material'
 import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
 import ChatBubbleOutlineIcon from '@mui/icons-material/ChatBubbleOutline';
 import { useRouter } from 'next/navigation';
+import CardMenu from '@/lib/components/pageComponent/other/cardMenu';
+import CustomAlert from '@/lib/components/customAlert';
 
 const OtherPage = () => {
   const router = useRouter();
   const [isEmbeddingHandling, setIsEmbeddingHandling] = useState(false);
+  const [isApiLoading, setIsApiLoading] = useState(true);
+  const [isApiError, setIsApiError] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState('');
   const [snackbarSeverity, setSnackbarSeverity] = useState<'success' | 'error'>('success');
+  const [embeddingCount, setEmbeddingCount] = useState(0);
+  const [nonEmbeddingData, setNonEmbeddingData] = useState<{
+    subject_id: number[];
+    teacher_id: number[];
+  }>({
+    subject_id: [],
+    teacher_id: []
+  });
+
+  const fetchEmbeddingCount = async () => {
+    setIsApiLoading(true);
+    setIsApiError(false);
+    try {
+      const res = await fetch('/api/embed');
+      const data = await res.json();
+
+      if (!res.ok || !data.data) {
+        setIsApiError(true);
+        setEmbeddingCount(0);
+        setNonEmbeddingData({ subject_id: [], teacher_id: [] });
+      } else {
+        setEmbeddingCount(data.count ?? 0);
+        setNonEmbeddingData(data.data);
+      }
+      console.log(data);
+    } catch (e) {
+      setIsApiError(true);
+      setEmbeddingCount(0);
+      setNonEmbeddingData({ subject_id: [], teacher_id: [] });
+    } finally {
+      setIsApiLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchEmbeddingCount();
+  }, []);
+
+  useEffect(() => {
+    if (snackbarMessage) {
+      const timer = setTimeout(() => {
+        setSnackbarMessage('');
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [snackbarMessage]);
 
   const handleGenerateEmbedding = async () => {
     setIsEmbeddingHandling(true);
@@ -20,12 +70,13 @@ const OtherPage = () => {
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({}) // Trigger all if no id is provided based on the API
+        body: JSON.stringify(nonEmbeddingData)
       });
 
       if (res.ok) {
         setSnackbarSeverity('success');
         setSnackbarMessage('เริ่มกระบวนการสร้าง Embedding ใหม่สำเร็จแล้ว');
+        await fetchEmbeddingCount();
       } else {
         setSnackbarSeverity('error');
         setSnackbarMessage('เกิดข้อผิดพลาดในการสร้าง Embedding ใหม่');
@@ -41,11 +92,16 @@ const OtherPage = () => {
   const menuItems = [
     {
       title: 'สร้าง Embedding ใหม่',
-      description: 'ปรับปรุงฐานข้อมูล Embedding ของระบบ AI สำหรับรายวิชาและผู้ใช้งาน ในกรณีที่เกิดข้อผิดพลาดตอนเพิ่มข้อมูล',
+      description: <>
+        <Typography variant='body1' color='text.primary' sx={{ fontWeight: 'bold' }}>จำนวนชื่อที่ยังไม่ได้สร้าง Embedding: {embeddingCount}</Typography>
+        <Typography variant='body2' color='text.secondary' sx={{ mt: 1 }}>ปรับปรุงฐานข้อมูล Embedding ของระบบ AI สำหรับรายวิชาและผู้ใช้งาน ในกรณีที่เกิดข้อผิดพลาดและไม่สามารถสร้าง Embedding ได้ตอนเพิ่มข้อมูล</Typography>
+      </>,
       icon: <AutoAwesomeIcon sx={{ fontSize: 40, color: 'primary.main' }} />,
       actionText: 'เริ่มทำงาน',
       action: handleGenerateEmbedding,
-      loading: isEmbeddingHandling
+      loading: isEmbeddingHandling,
+      disabled: embeddingCount === 0 || isApiError || isApiLoading,
+      overlayState: isApiLoading ? 'loading' as const : isApiError ? 'error' as const : 'none' as const
     },
     {
       title: 'แชทที่มีการแจ้งปัญหา',
@@ -53,7 +109,8 @@ const OtherPage = () => {
       icon: <ChatBubbleOutlineIcon sx={{ fontSize: 40, color: 'primary.main' }} />,
       actionText: 'เรียกดู',
       action: () => router.push('/admin/other/reported-chat'),
-      loading: false
+      loading: false,
+      disabled: false
     }
   ];
 
@@ -63,45 +120,12 @@ const OtherPage = () => {
         <Typography variant="h4" gutterBottom>
           จัดการระบบ
         </Typography>
-        <Grid container spacing={3}>
-          {menuItems.map((item, idx) => (
-            <Grid size={{ xs: 12, sm: 6, md: 4 }} key={idx}>
-              <Paper elevation={2} sx={{ p: 3, borderRadius: 2, height: '100%', display: 'flex', flexDirection: 'column' }}>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
-                  {item.icon}
-                  <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
-                    {item.title}
-                  </Typography>
-                </Box>
-                <Divider sx={{ mb: 2 }} />
-                <Typography variant="body2" color="text.secondary" sx={{ flexGrow: 1, mb: 3 }}>
-                  {item.description}
-                </Typography>
-                <Button
-                  variant="contained"
-                  fullWidth
-                  onClick={item.action}
-                  disabled={item.loading}
-                  startIcon={item.loading ? <CircularProgress size={20} color="inherit" /> : null}
-                >
-                  {item.loading ? 'กำลังทำงาน...' : item.actionText}
-                </Button>
-              </Paper>
-            </Grid>
-          ))}
-        </Grid>
+        <CardMenu menuItems={menuItems} />
       </Box>
 
-      <Snackbar
-        open={!!snackbarMessage}
-        autoHideDuration={6000}
-        onClose={() => setSnackbarMessage('')}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-      >
-        <Alert onClose={() => setSnackbarMessage('')} severity={snackbarSeverity} sx={{ width: '100%' }}>
-          {snackbarMessage}
-        </Alert>
-      </Snackbar>
+      {!!snackbarMessage && (
+        <CustomAlert message={snackbarMessage} severity={snackbarSeverity} />
+      )}
     </>
   )
 }

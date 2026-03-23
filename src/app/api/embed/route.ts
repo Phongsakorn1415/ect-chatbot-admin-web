@@ -10,7 +10,11 @@ export async function GET() {
       },
     });
     const data = await response.json();
-    return NextResponse.json(data);
+    let count = 0;
+    if (data.status === "success" && data.data) {
+      count = (data.data.subject_id?.length || 0) + (data.data.teacher_id?.length || 0);
+    }
+    return NextResponse.json({ ...data, count });
   } catch (error) {
     console.error("Error fetching embeds:", error);
     return NextResponse.json(
@@ -23,10 +27,20 @@ export async function GET() {
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const { subject_id, teacher_id } = body as {
+    let { subject_id, teacher_id } = body as {
       subject_id?: number[];
       teacher_id?: number[];
     };
+    
+    if ((!subject_id || subject_id.length === 0) && (!teacher_id || teacher_id.length === 0)) {
+      const getRes = await fetch(`${process.env.CHATBOT_API_URL}/embeddings`);
+      const missingData = await getRes.json();
+      if (missingData.status === "success" && missingData.data) {
+        subject_id = missingData.data.subject_id || [];
+        teacher_id = missingData.data.teacher_id || [];
+      }
+    }
+    
     const response = await fetch(`${process.env.CHATBOT_API_URL}/embeddings`, {
       method: "POST",
       headers: {
