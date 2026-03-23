@@ -167,7 +167,22 @@ const ChatBoxFull = () => {
                 />
             </Box>
 
-            <Backdrop open={isLoading || !isOnline} sx={{ position: 'absolute', zIndex: 10, flexDirection: 'column', gap: 2, color: '#fff', backgroundColor: 'rgba(0, 0, 0, 0.6)', borderRadius: 1 }}>
+            <Backdrop
+                open={isLoading || !isOnline}
+                sx={{
+                    zIndex: (theme) => theme.zIndex.drawer - 1,
+                    flexDirection: 'column',
+                    gap: 2,
+                    color: '#fff',
+                    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+                    left: {
+                        xs: 0,
+                        md: '29.166667vw',
+                        lg: '20.833333vw',
+                        xl: '16.666667vw'
+                    }
+                }}
+            >
                 {isLoading ? (
                     <>
                         <CircularProgress color="inherit" />
