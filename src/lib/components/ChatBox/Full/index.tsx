@@ -177,7 +177,7 @@ const ChatBoxFull = () => {
                     <>
                         <SignalWifiOffIcon sx={{ fontSize: 48, color: 'error.main' }} />
                         <Typography variant="h6" color="error.light">การเชื่อมต่อล้มเหลว</Typography>
-                        <Typography variant="body2">AI ออฟไลน์</Typography>
+                        <Typography variant="body2">AI offline</Typography>
                     </>
                 )}
             </Backdrop>

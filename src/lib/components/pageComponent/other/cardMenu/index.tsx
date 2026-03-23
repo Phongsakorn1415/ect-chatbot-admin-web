@@ -45,12 +45,12 @@ const CardMenu = ({ menuItems }: CardMenuProps) => {
                                 {item.overlayState === 'loading' ? (
                                     <>
                                         <CircularProgress color="inherit" size={30} />
-                                        <Typography variant="body2">Connecting...</Typography>
+                                        <Typography variant="body2">กำลังเชื่อมต่อ...</Typography>
                                     </>
                                 ) : (
                                     <>
                                         <SignalWifiOffIcon sx={{ fontSize: 30, color: 'error.main' }} />
-                                        <Typography variant="body2" color="error.light">Offline</Typography>
+                                        <Typography variant="body2" color="error.light">offline</Typography>
                                     </>
                                 )}
                             </Backdrop>

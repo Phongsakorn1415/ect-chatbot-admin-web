@@ -99,7 +99,7 @@ const ChatBoxCard = () => {
             <Box sx={{ flex: 1, overflowY: 'auto', p: 2, display: 'flex', flexDirection: 'column', gap: 2, bgcolor: '#f5f5f5' }}>
                 {messages.length === 0 && (
                     <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%', opacity: 0.5 }}>
-                        <Typography variant="body2" color="text.secondary">ถามสิ่งที่อยากรู้ . . .</Typography>
+                        <Typography variant="body2" color="text.secondary">เริ่มการสนทนา</Typography>
                     </Box>
                 )}
 
@@ -150,7 +150,7 @@ const ChatBoxCard = () => {
                 <TextField
                     fullWidth
                     size="small"
-                    placeholder="Type a message..."
+                    placeholder="ถามสิ่งที่อยากรู้ . . ."
                     value={inputValue}
                     onChange={(e) => setInputValue(e.target.value)}
                     onKeyDown={handleKeyPress}
@@ -178,7 +178,7 @@ const ChatBoxCard = () => {
                 ) : (
                     <>
                         <SignalWifiOffIcon sx={{ fontSize: 30, color: 'error.main' }} />
-                        <Typography variant="body2" color="error.light">ออฟไลน์</Typography>
+                        <Typography variant="body2" color="error.light">offline</Typography>
                     </>
                 )}
             </Backdrop>
