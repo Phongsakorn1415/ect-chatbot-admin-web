@@ -142,7 +142,10 @@ model ChatLog {
   toolResult     String?  @map("tool_result")
   toolsArguments String?  @map("tools_arguments")
   chatHistory    String?  @map("chat_history")
-  createdAt      DateTime @default(now()) @map("created_at")
+  isReported     Boolean   @default(false) @map("is_reported")
+  reportMessage  String?   @map("report_message")
+  reportedAt     DateTime? @map("reported_at")
+  createdAt      DateTime  @default(now()) @map("created_at")
   @@map("chat_logs")
 }
 

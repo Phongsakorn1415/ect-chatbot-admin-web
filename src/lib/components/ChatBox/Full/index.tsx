@@ -1,4 +1,4 @@
-import { Box, Divider, TextField, Typography, InputAdornment, IconButton, Backdrop, CircularProgress, Paper, Avatar, Menu, MenuItem, ListItemIcon, ListItemText, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions, Button } from '@mui/material'
+import { Box, Divider, TextField, Typography, InputAdornment, IconButton, Backdrop, CircularProgress, Paper, Avatar, Menu, MenuItem, ListItemIcon, ListItemText, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions, Button, Tooltip, RadioGroup, FormControlLabel, Radio } from '@mui/material'
 import SendIcon from '@mui/icons-material/Send'
 import SignalWifiOffIcon from '@mui/icons-material/SignalWifiOff'
 import SmartToyIcon from '@mui/icons-material/SmartToy'
@@ -8,10 +8,12 @@ import TextSnippetIcon from '@mui/icons-material/TextSnippet'
 import TableChartIcon from '@mui/icons-material/TableChart'
 import DeleteSweepIcon from '@mui/icons-material/DeleteSweep'
 import WarningAmberIcon from '@mui/icons-material/WarningAmber';
+import FlagIcon from '@mui/icons-material/Flag';
 
 import React, { useRef, useEffect, useState } from 'react'
 import { useChat } from '@/lib/hooks/useChat'
 import { exportToCsv, exportToTxt } from '@/lib/utils/chatExport'
+import CustomAlert from '@/lib/components/customAlert'
 
 const ChatBoxFull = () => {
     const { messages, isOnline, isLoading, isSending, sendMessage, clearHistory } = useChat()
@@ -24,6 +26,52 @@ const ChatBoxFull = () => {
 
     // Dialog State
     const [openDialog, setOpenDialog] = useState(false)
+
+    // Report State
+    const [openReportModal, setOpenReportModal] = useState(false)
+    const [selectedLogId, setSelectedLogId] = useState<number | null>(null)
+    const [reportReason, setReportReason] = useState('เนื้อหาไม่ถูกต้อง')
+    const [otherReason, setOtherReason] = useState('')
+    const [openConfirmReportDialog, setOpenConfirmReportDialog] = useState(false)
+    const [alertInfo, setAlertInfo] = useState<{ message: string, severity: 'error' | 'warning' | 'info' | 'success' } | null>(null)
+
+    const handleOpenReportModal = (id?: number) => {
+        if (!id) return
+        setSelectedLogId(id)
+        setOpenReportModal(true)
+    }
+
+    const handleReportSubmit = () => {
+        setOpenReportModal(false)
+        setOpenConfirmReportDialog(true)
+    }
+
+    const handleConfirmReport = async () => {
+        setOpenConfirmReportDialog(false)
+        if (!selectedLogId) return
+
+        const finalReason = reportReason === 'อื่นๆ' ? otherReason : reportReason
+
+        try {
+            const res = await fetch(`/api/chat/report/${selectedLogId}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ reportMessage: finalReason })
+            })
+
+            if (res.ok) {
+                setAlertInfo({ message: 'ส่งรายงานสำเร็จ', severity: 'success' })
+            } else {
+                setAlertInfo({ message: 'เกิดข้อผิดพลาดในการส่งรายงาน', severity: 'error' })
+            }
+        } catch (error) {
+            setAlertInfo({ message: 'เกิดข้อผิดพลาดในการส่งรายงาน', severity: 'error' })
+        }
+
+        setTimeout(() => setAlertInfo(null), 3000)
+        setReportReason('เนื้อหาไม่ถูกต้อง')
+        setOtherReason('')
+    }
 
     const scrollToBottom = () => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -128,6 +176,23 @@ const ChatBoxFull = () => {
                         >
                             <Typography variant="body1" sx={{ whiteSpace: 'pre-wrap' }}>{msg.content}</Typography>
                         </Paper>
+                        {msg.role !== 'user' && (
+                            <Tooltip title="Report" placement='top' arrow>
+                                <IconButton
+                                    size="small"
+                                    onClick={() => handleOpenReportModal(msg.logId)}
+                                    sx={{
+                                        height: '50%',
+                                        '&:hover': {
+                                            color: 'error.main',
+                                            bgcolor: 'none',
+                                        },
+                                    }}
+                                >
+                                    <FlagIcon fontSize="small" />
+                                </IconButton>
+                            </Tooltip>
+                        )}
                     </Box>
                 ))}
                 {isSending && (
@@ -215,6 +280,69 @@ const ChatBoxFull = () => {
                     </Button>
                 </DialogActions>
             </Dialog>
+
+            {/* Report Modal */}
+            <Dialog open={openReportModal} onClose={() => setOpenReportModal(false)} fullWidth maxWidth="sm">
+                <DialogTitle>รายงานข้อความ</DialogTitle>
+                <DialogContent>
+                    <DialogContentText sx={{ mb: 2 }}>
+                        กรุณาเลือกสาเหตุที่คุณต้องการรายงานข้อความนี้:
+                    </DialogContentText>
+                    <RadioGroup
+                        value={reportReason}
+                        onChange={(e) => setReportReason(e.target.value)}
+                    >
+                        <FormControlLabel value="ไม่สามารถตอบคำถามได้" control={<Radio />} label="ไม่สามารถตอบคำถามได้" />
+                        <FormControlLabel value="เนื้อหาของคำตอบไม่ถูกต้อง" control={<Radio />} label="เนื้อหาของคำตอบไม่ถูกต้อง" />
+                        <FormControlLabel value="ไม่สามารถอ่านเนื้อหาของคำตอบได้" control={<Radio />} label="ไม่สามารถอ่านเนื้อหาของคำตอบได้" />
+                        <FormControlLabel value="เนื้อหาไม่เหมาะสม" control={<Radio />} label="เนื้อหาไม่เหมาะสม" />
+                        <FormControlLabel value="อื่นๆ" control={<Radio />} label="อื่นๆ" />
+                    </RadioGroup>
+                    {reportReason === 'อื่นๆ' && (
+                        <TextField
+                            fullWidth
+                            multiline
+                            rows={3}
+                            placeholder="โปรดระบุสาเหตุ..."
+                            value={otherReason}
+                            onChange={(e) => setOtherReason(e.target.value)}
+                            sx={{ mt: 2 }}
+                        />
+                    )}
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={() => setOpenReportModal(false)}>ยกเลิก</Button>
+                    <Button
+                        onClick={handleReportSubmit}
+                        variant="contained"
+                        color="error"
+                        disabled={reportReason === 'อื่นๆ' && !otherReason.trim()}
+                    >
+                        รายงาน
+                    </Button>
+                </DialogActions>
+            </Dialog>
+
+            {/* Confirm Report Dialog */}
+            <Dialog open={openConfirmReportDialog} onClose={() => setOpenConfirmReportDialog(false)}>
+                <DialogTitle>ยืนยันการส่งรายงาน</DialogTitle>
+                <DialogContent>
+                    <DialogContentText>
+                        คุณแน่ใจหรือไม่ว่าต้องการส่งรายงานนี้?
+                    </DialogContentText>
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={() => setOpenConfirmReportDialog(false)}>ยกเลิก</Button>
+                    <Button onClick={handleConfirmReport} variant="contained" color="error" autoFocus>
+                        ยืนยัน
+                    </Button>
+                </DialogActions>
+            </Dialog>
+
+            {/* Custom Alert */}
+            {alertInfo && (
+                <CustomAlert message={alertInfo.message} severity={alertInfo.severity} />
+            )}
         </Box>
     )
 }

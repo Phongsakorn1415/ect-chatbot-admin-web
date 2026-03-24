@@ -5,6 +5,7 @@ import React, { createContext, useContext, useState, useEffect, useCallback, Rea
 export type Message = {
     role: "user" | "bot";
     content: string;
+    logId?: number;
 };
 
 export type UseChatReturn = {
@@ -102,10 +103,13 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
                 }
 
                 const data = await res.json();
+                
+                const logId = data.metadata?.isDataCollected?.Logs_ID || data.data?.metadata?.isDataCollected?.Logs_ID;
 
                 const botResponse: Message = {
                     role: "bot",
                     content: data.response || (data.data && data.data.response) || "เกิดข้อผิดพลาด กรุณาลองอีกครั้ง",
+                    logId: logId,
                 };
 
                 setMessages((prev) => [...prev, botResponse]);

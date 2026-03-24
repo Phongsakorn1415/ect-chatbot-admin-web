@@ -25,6 +25,8 @@
     "@types/nodemailer": "^7.0.3",
     "bcrypt": "^6.0.0",
     "dayjs": "^1.11.18",
+    "jspdf": "^4.2.1",
+    "jspdf-autotable": "^5.0.7",
     "mime": "^4.1.0",
     "next": "15.3.3",
     "next-auth": "^4.24.11",
@@ -32,7 +34,8 @@
     "pdf-lib": "^1.17.1",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
-    "styled-components": "^6.1.19"
+    "styled-components": "^6.1.19",
+    "xlsx": "^0.18.5"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
