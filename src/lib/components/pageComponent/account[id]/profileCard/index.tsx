@@ -1,5 +1,5 @@
 import React from 'react'
-import { Box, Button, CircularProgress, Divider, Grid, Paper, TextField, Tooltip, Typography, MenuItem } from '@mui/material'
+import { Box, Button, CircularProgress, Divider, Grid, Paper, TextField, Tooltip, Typography, MenuItem, Dialog, DialogTitle, DialogContent, DialogActions } from '@mui/material'
 import { Account } from '@/lib/types/accounts'
 
 import useBreakPointResolution from '@/lib/services/BreakPointResolusion';
@@ -25,6 +25,7 @@ const ProfileCard = ({ accountData, isAccountDataLoaded, onSaved }: { accountDat
     });
     const [saving, setSaving] = React.useState(false);
     const [alert, setAlert] = React.useState<{ message: string; severity: 'error' | 'warning' | 'info' | 'success' } | null>(null);
+    const [embedErrorModal, setEmbedErrorModal] = React.useState<{ open: boolean, data?: any }>({ open: false });
 
     // Sync form with incoming account data when it changes or when entering edit mode
     React.useEffect(() => {
@@ -65,22 +66,44 @@ const ProfileCard = ({ accountData, isAccountDataLoaded, onSaved }: { accountDat
         if (!confirm('คุณต้องการบันทึกการเปลี่ยนแปลงใช่หรือไม่')) return;
         setSaving(true);
         try {
+            const nameChanged = form.title !== accountData.title || form.firstName !== accountData.firstName || form.lastName !== accountData.lastName;
+            const payload: any = {
+                title: form.title,
+                firstName: form.firstName,
+                lastName: form.lastName,
+                role: isSelf ? accountData.role : form.role,
+            };
+
+            if (nameChanged) {
+                payload.name_embedding = null;
+            }
+
             const res = await fetch(`/api/accounts/${accountData.id}`, {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    title: form.title,
-                    firstName: form.firstName,
-                    lastName: form.lastName,
-                    // Prevent changing own role from UI even if payload is tampered
-                    role: isSelf ? accountData.role : form.role,
-                }),
+                body: JSON.stringify(payload),
             });
             if (!res.ok) {
                 const text = await res.text();
                 throw new Error(text || 'Failed to update user');
             }
             const data = await res.json();
+
+            const roleToCheck = isSelf ? accountData.role : form.role;
+
+            if (nameChanged && roleToCheck === 'TEACHER') {
+                const embedres = await fetch("/api/embed", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ teacher_id: [accountData.id] }),
+                });
+
+                if (!embedres.ok) {
+                    setEmbedErrorModal({ open: true, data });
+                    return; // Prevent immediate success alert, modal will show
+                }
+            }
+
             setAlert({ message: 'บันทึกข้อมูลสำเร็จ', severity: 'success' });
             setIsEditMode(false);
             // Propagate updated data to parent if provided
@@ -208,6 +231,42 @@ const ProfileCard = ({ accountData, isAccountDataLoaded, onSaved }: { accountDat
                     </Box>
                 )}
             </Paper>
+
+            <Dialog open={embedErrorModal.open} maxWidth="sm" fullWidth>
+                <DialogTitle>บันทึกข้อมูลสำเร็จ (แต่ AI ยังไม่รู้จักชื่อใหม่ของคุณ)</DialogTitle>
+                <DialogContent>
+                    <Typography>
+                        ระบบได้บันทึกการเปลี่ยนแปลงข้อมูลบัญชีของคุณเรียบร้อยแล้ว
+                    </Typography>
+                    <Typography color="error" sx={{ mt: 1 }}>
+                        อย่างไรก็ตาม เกิดข้อขัดข้องในขั้นตอน "การสอน AI" ทำให้ระบบแชทบอทยังไม่สามารถค้นหาหรือตอบคำถามโดยใช้ชื่อใหม่ของคุณได้
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+                        {accountData?.role === 'TEACHER' ? 
+                            "กรุณาแจ้งปัญหาให้ผู้ดูแลระบบ (Admin) ทราบ เพื่อให้ดำเนินการสอน AI ใหม่อีกครั้งในภายหลัง" 
+                            : 
+                            "เนื่องจากคุณเป็นแอดมิน คุณสามารถไปสั่งให้ระบบสอน AI สำหรับชื่อของคุณใหม่ได้ที่หน้าการตั้งค่า Other"
+                        }
+                    </Typography>
+                </DialogContent>
+                <DialogActions sx={{ p: 2, justifyContent: 'end' }}>
+                    <Button 
+                        variant="contained" 
+                        color="primary" 
+                        onClick={() => {
+                            setEmbedErrorModal({ open: false });
+                            setAlert({ message: 'บันทึกข้อมูลสำเร็จ', severity: 'success' });
+                            setIsEditMode(false);
+                            if (onSaved && embedErrorModal.data?.updatedAccount) {
+                                onSaved(embedErrorModal.data.updatedAccount);
+                            }
+                        }}
+                    >
+                        เข้าใจแล้ว
+                    </Button>
+                </DialogActions>
+            </Dialog>
+
             {alert && <CustomAlert message={alert.message} severity={alert.severity} />}
         </>
     )
