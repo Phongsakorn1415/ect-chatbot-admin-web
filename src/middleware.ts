@@ -52,4 +52,15 @@ export async function middleware(req: any) {
   ) {
     return NextResponse.redirect(new URL("/admin", req.url));
   }
+
+  // other pages access control
+  if (pathname.startsWith("/admin/other") && !user) {
+    return NextResponse.redirect(new URL("/", req.url));
+  } else if (
+    pathname.startsWith("/admin/other") &&
+    user &&
+    user.role == "TEACHER"
+  ) {
+    return NextResponse.redirect(new URL("/admin", req.url));
+  }
 }
