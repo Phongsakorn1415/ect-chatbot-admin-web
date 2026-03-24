@@ -35,7 +35,7 @@ export async function PATCH(request: Request, { params }: { params: { id: string
     try {
         const { id } = params;
         const body = await request.json();
-        const { title, firstName, lastName, role } = body;
+        const { title, firstName, lastName, role, name_embedding } = body;
 
         // Fetch current user to enforce role constraints
         const current = await db.user.findUnique({
@@ -65,6 +65,11 @@ export async function PATCH(request: Request, { params }: { params: { id: string
                 ...(role ? { role } : {}),
             }
         });
+
+        if (name_embedding === null) {
+            await db.$executeRaw`UPDATE "User" SET "name_embedding" = NULL WHERE "id" = ${Number(id)}`;
+        }
+
         return NextResponse.json({ message: "User updated successfully", updatedAccount }, { status: 200 });
     } catch (error) {
         return NextResponse.error();

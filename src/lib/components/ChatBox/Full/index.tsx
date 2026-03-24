@@ -61,7 +61,7 @@ const ChatBoxFull = () => {
     }
 
     return (
-        <Box sx={{ position: 'relative', height: '100%', width: '100%', display: 'flex', flexDirection: 'column' }}>
+        <Box sx={{ position: 'relative', height: '100%', width: '100%', display: 'flex', flexDirection: 'column', borderRadius: 2, overflow: 'hidden' }}>
             <Box sx={{ p: 2, borderBottom: 1, borderColor: 'divider', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <Typography variant="h5" sx={{ fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: 1, flexDirection: 'row' }}>
                     {/* <SmartToyIcon color="primary" />  */}
@@ -82,16 +82,16 @@ const ChatBoxFull = () => {
                 >
                     <MenuItem onClick={() => { exportToTxt(messages); handleMenuClose() }}>
                         <ListItemIcon><TextSnippetIcon fontSize="small" /></ListItemIcon>
-                        <ListItemText>Export to TXT</ListItemText>
+                        <ListItemText>บันทึกเป็น TXT</ListItemText>
                     </MenuItem>
                     <MenuItem onClick={() => { exportToCsv(messages); handleMenuClose() }}>
                         <ListItemIcon><TableChartIcon fontSize="small" /></ListItemIcon>
-                        <ListItemText>Export to CSV</ListItemText>
+                        <ListItemText>บันทึกเป็น CSV</ListItemText>
                     </MenuItem>
                     <Divider />
                     <MenuItem onClick={() => { setOpenDialog(true); handleMenuClose() }} sx={{ color: 'error.main' }}>
                         <ListItemIcon><DeleteSweepIcon fontSize="small" color="error" /></ListItemIcon>
-                        <ListItemText>Clear History</ListItemText>
+                        <ListItemText>ล้างประวัติการแชท</ListItemText>
                     </MenuItem>
                 </Menu>
             </Box>
@@ -99,7 +99,7 @@ const ChatBoxFull = () => {
             <Box sx={{ flex: 1, overflowY: 'auto', p: 2, display: 'flex', flexDirection: 'column', gap: 2 }}>
                 {messages.length === 0 && (
                     <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%', opacity: 0.5 }}>
-                        <Typography>Start a conversation with the AI</Typography>
+                        <Typography>เริ่มการสนทนา</Typography>
                     </Box>
                 )}
 
@@ -148,7 +148,7 @@ const ChatBoxFull = () => {
                     fullWidth
                     multiline
                     maxRows={3}
-                    placeholder="Type your message..."
+                    placeholder="ถามสิ่งที่อยากรู้ . . ."
                     value={inputValue}
                     onChange={(e) => setInputValue(e.target.value)}
                     onKeyDown={handleKeyPress}
@@ -167,17 +167,32 @@ const ChatBoxFull = () => {
                 />
             </Box>
 
-            <Backdrop open={isLoading || !isOnline} sx={{ position: 'absolute', zIndex: 10, flexDirection: 'column', gap: 2, color: '#fff', backgroundColor: 'rgba(0, 0, 0, 0.6)', borderRadius: 1 }}>
+            <Backdrop
+                open={isLoading || !isOnline}
+                sx={{
+                    zIndex: (theme) => theme.zIndex.drawer - 1,
+                    flexDirection: 'column',
+                    gap: 2,
+                    color: '#fff',
+                    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+                    left: {
+                        xs: 0,
+                        md: '29.166667vw',
+                        lg: '20.833333vw',
+                        xl: '16.666667vw'
+                    }
+                }}
+            >
                 {isLoading ? (
                     <>
                         <CircularProgress color="inherit" />
-                        <Typography variant="h6">Connecting to AI Service...</Typography>
+                        <Typography variant="h6">กำลังเชื่อมต่อกับ AI...</Typography>
                     </>
                 ) : (
                     <>
                         <SignalWifiOffIcon sx={{ fontSize: 48, color: 'error.main' }} />
-                        <Typography variant="h6" color="error.light">Connection Failed</Typography>
-                        <Typography variant="body2">Unable to connect to the Chatbot API.</Typography>
+                        <Typography variant="h6" color="error.light">การเชื่อมต่อล้มเหลว</Typography>
+                        <Typography variant="body2">AI offline</Typography>
                     </>
                 )}
             </Backdrop>
@@ -190,13 +205,13 @@ const ChatBoxFull = () => {
                 <DialogTitle>{"Clear Chat History?"}</DialogTitle>
                 <DialogContent>
                     <DialogContentText>
-                        Are you sure you want to delete all chat history? This action cannot be undone.
+                        คุณแน่ใจหรือไม่ว่าต้องการลบประวัติการแชททั้งหมด? การดำเนินการนี้ไม่สามารถย้อนกลับได้
                     </DialogContentText>
                 </DialogContent>
                 <DialogActions>
-                    <Button onClick={() => setOpenDialog(false)}>Cancel</Button>
+                    <Button onClick={() => setOpenDialog(false)}>ยกเลิก</Button>
                     <Button onClick={handleClearHistoryConfirm} color="error" autoFocus>
-                        Clear History
+                        ลบประวัติการแชท
                     </Button>
                 </DialogActions>
             </Dialog>

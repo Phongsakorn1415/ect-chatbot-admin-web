@@ -1,7 +1,7 @@
 'use client'
 
 import React from "react";
-import { Box, Paper, Typography, TextField, Button, Alert, Stack, CircularProgress, Backdrop } from "@mui/material";
+import { Box, Paper, Typography, TextField, Button, Alert, Stack, CircularProgress, Backdrop, Dialog, DialogTitle, DialogContent, DialogActions } from "@mui/material";
 import { useRouter, useSearchParams } from "next/navigation";
 
 const RegisterPage = () => {
@@ -20,6 +20,8 @@ const RegisterPage = () => {
     const [success, setSuccess] = React.useState<string | null>(null);
     const [inviteExpired, setInviteExpired] = React.useState(false);
     const [countdown, setCountdown] = React.useState(10);
+    const [role, setRole] = React.useState<string>("TEACHER");
+    const [embedErrorModal, setEmbedErrorModal] = React.useState<{ open: boolean }>({ open: false });
 
     const [isTokenValid, setIsTokenValid] = React.useState(true);
 
@@ -52,6 +54,7 @@ const RegisterPage = () => {
                     if (iv.title != null) setTitle(iv.title);
                     if (iv.firstName != null) setFirstName(iv.firstName);
                     if (iv.lastName != null) setLastName(iv.lastName);
+                    if (iv.role != null) setRole(iv.role);
                     // detect expired invite from API
                     if (iv.expired === true || iv.status === "EXPIRED") {
                         setInviteExpired(true);
@@ -120,14 +123,18 @@ const RegisterPage = () => {
 
             const responseData = await res.json();
 
-            const embedres = await fetch("/api/embed", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ teacher_id: [responseData.user_id] }),
-            });
+            // เฉพาะ TEACHER เท่านั้นที่ต้องทำ Embedding
+            if (role === "TEACHER" || responseData.role === "TEACHER") {
+                const embedres = await fetch("/api/embed", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ teacher_id: [responseData.user_id] }),
+                });
 
-            if (!embedres.ok) {
-                setError("ลงทะเบียนสำเร็จ แต่เกิดข้อผิดพลาดกรุณาติดต่อผู้ดูแลระบบ");
+                if (!embedres.ok) {
+                    setEmbedErrorModal({ open: true });
+                    return; // หยุดและให้ UI แสดง Modal กั้นไว้
+                }
             }
 
             setSuccess("ลงทะเบียนสำเร็จ กำลังนำคุณไปยังหน้าเข้าสู่ระบบ…");
@@ -260,6 +267,35 @@ const RegisterPage = () => {
             >
                 <CircularProgress color="inherit" />
             </Backdrop>
+
+            {/* Embed Error Modal */}
+            <Dialog open={embedErrorModal.open} maxWidth="sm" fullWidth>
+                <DialogTitle>ลงทะเบียนสำเร็จ (แต่ AI ยังไม่รู้จักชื่อของคุณ)</DialogTitle>
+                <DialogContent>
+                    <Typography>
+                        บัญชีเข้าใช้งานระบบของคุณได้ถูกสร้างขึ้นเรียบร้อยแล้ว
+                    </Typography>
+                    <Typography color="error" sx={{ mt: 1 }}>
+                        อย่างไรก็ตาม เกิดข้อขัดข้องในขั้นตอน "การสอน AI" ทำให้ระบบแชทบอทยังไม่สามารถค้นหาหรือตอบคำถามโดยใช้ชื่อคุณได้ในขณะนี้
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+                        กรุณาแจ้งปัญหาให้ผู้ดูแลระบบ (Admin) ทราบ เพื่อให้ดำเนินการสอน AI ใหม่อีกครั้งในภายหลัง
+                    </Typography>
+                </DialogContent>
+                <DialogActions sx={{ p: 2, justifyContent: 'end' }}>
+                    <Button 
+                        variant="contained" 
+                        color="primary" 
+                        onClick={() => {
+                            setEmbedErrorModal({ open: false });
+                            setSuccess("ลงทะเบียนสำเร็จ กำลังนำคุณไปยังหน้าเข้าสู่ระบบ…");
+                            setTimeout(() => router.push("/"), 1200);
+                        }}
+                    >
+                        เข้าใจแล้ว
+                    </Button>
+                </DialogActions>
+            </Dialog>
         </Box>
     );
 };

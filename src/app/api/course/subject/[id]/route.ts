@@ -18,22 +18,38 @@ export async function PATCH(
       education_sectorId,
       course_yearId,
       prerequisiteId,
+      name_embedding,
     } = body;
     const { id } = await params;
 
+    const data: any = {
+      code,
+      name,
+      credit,
+      language,
+      isRequire,
+    };
+
+    if (education_sectorId !== undefined) {
+      data.Education_sector_id = education_sectorId ? { connect: { id: education_sectorId } } : { disconnect: true };
+    }
+
+    if (course_yearId !== undefined) {
+      data.Course_year_id = course_yearId ? { connect: { id: course_yearId } } : { disconnect: true };
+    }
+
+    if (prerequisiteId !== undefined) {
+      data.prerequisite = prerequisiteId ? { connect: { id: prerequisiteId } } : { disconnect: true };
+    }
+
     const updatedSubject = await db.subject.update({
       where: { id: Number(id) },
-      data: {
-        code,
-        name,
-        credit,
-        language,
-        isRequire,
-        education_sectorId,
-        course_yearId,
-        prerequisiteId,
-      },
+      data,
     });
+
+    if (name_embedding === null) {
+      await db.$executeRaw`UPDATE "subject" SET "name_embedding" = NULL WHERE "id" = ${Number(id)}`;
+    }
     return NextResponse.json({
       Message: "Subject updated successfully",
       data: updatedSubject,

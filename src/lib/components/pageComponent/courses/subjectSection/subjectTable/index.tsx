@@ -30,7 +30,7 @@ const SubjectTable: React.FC<Props> = ({ subjects, allSubjects = [], loading = f
 
     // Pagination state
     const [page, setPage] = useState(0);
-    const [rowsPerPage, setRowsPerPage] = useState(5);
+    const [rowsPerPage, setRowsPerPage] = useState(10);
 
     // Selection state (store selected subject ids)
     const [selected, setSelected] = useState<number[]>([]);
@@ -222,7 +222,7 @@ const SubjectTable: React.FC<Props> = ({ subjects, allSubjects = [], loading = f
                 onPageChange={handleChangePage}
                 rowsPerPage={rowsPerPage}
                 onRowsPerPageChange={handleChangeRowsPerPage}
-                rowsPerPageOptions={[5, 10, 20, 50]}
+                rowsPerPageOptions={[10, 20, 50]}
                 labelRowsPerPage="จำนวนวิชาต่อหน้า"
                 sx={{
                     borderTop: 1,
