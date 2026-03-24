@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import {
 	Box,
 	Button,
@@ -67,7 +68,10 @@ type ParsedSubject = {
 const defaultManualRow = (): ManualRow => ({ code: "", name: "", credit: "", language: "", selected: true });
 
 const AddSubjectModal: React.FC<Props> = ({ open, onClose, context, sectors = [], courseYearId = null, courseYearYear = null, onAdded }) => {
+	const router = useRouter();
 	const [tab, setTab] = useState<0 | 1>(0); // 0: manual, 1: AI
+
+	const [embedErrorModal, setEmbedErrorModal] = useState<{ open: boolean; createdCount: number }>({ open: false, createdCount: 0 });
 
 	// Manual state
 	const [rows, setRows] = useState<ManualRow[]>([defaultManualRow()]);
@@ -195,7 +199,8 @@ const AddSubjectModal: React.FC<Props> = ({ open, onClose, context, sectors = []
 			if (!embedres.ok) {
 				const text = await embedres.text();
 				console.error("Embed failed:", text);
-				throw new Error(text || "Embed failed");
+				setEmbedErrorModal({ open: true, createdCount: created });
+				return;
 			}
 
 			onAdded?.(created);
@@ -465,7 +470,8 @@ const AddSubjectModal: React.FC<Props> = ({ open, onClose, context, sectors = []
 			if (!embedres.ok) {
 				const text = await embedres.text();
 				console.error("Embed failed:", text);
-				throw new Error(text || "Embed failed");
+				setEmbedErrorModal({ open: true, createdCount: created });
+				return;
 			}
 
 			onAdded?.(created);
@@ -824,6 +830,49 @@ const AddSubjectModal: React.FC<Props> = ({ open, onClose, context, sectors = []
 					</Button>
 					<Button variant="text" color="inherit" onClick={handleCancelAnalysis} disabled={creatingSector}>
 						ยกเลิก
+					</Button>
+				</DialogActions>
+			</Dialog>
+
+			{/* Embed Error Modal */}
+			<Dialog open={embedErrorModal.open} maxWidth="sm" fullWidth>
+				<DialogTitle>บันทึกวิชาสำเร็จ (แต่ AI ยังไม่รู้จักวิชาใหม่)</DialogTitle>
+				<DialogContent>
+					<Typography>
+						ระบบได้เพิ่มข้อมูลวิชาจำนวน {embedErrorModal.createdCount} วิชา ลงในฐานข้อมูลเรียบร้อยแล้ว
+					</Typography>
+					<Typography color="error" sx={{ mt: 1 }}>
+						อย่างไรก็ตาม เกิดข้อขัดข้องในขั้นตอน "การสอน AI" ทำให้ระบบแชทบอทยังไม่สามารถค้นหาหรือตอบคำถามเกี่ยวกับวิชาที่เพิ่งเพิ่มขึ้นมานี้ได้
+					</Typography>
+					<Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+						เพื่อแก้ไขปัญหานี้ กรุณาไปที่เมนู "Other" (อื่นๆ) และคลิกปุ่มทำการสอน AI ใหม่อีกครั้ง เพื่อให้แชทบอทพร้อมตอบคำถามสำหรับวิชาเหล่านี้
+					</Typography>
+				</DialogContent>
+				<DialogActions sx={{ p: 2, justifyContent: 'end', gap: 1 }}>
+					<Button
+						variant="outlined"
+						color="inherit"
+						onClick={() => {
+							setEmbedErrorModal({ open: false, createdCount: 0 });
+							onAdded?.(embedErrorModal.createdCount);
+							resetAll();
+							onClose();
+						}}
+					>
+						เข้าใจแล้ว
+					</Button>
+					<Button
+						variant="contained"
+						color="primary"
+						onClick={() => {
+							setEmbedErrorModal({ open: false, createdCount: 0 });
+							onAdded?.(embedErrorModal.createdCount);
+							resetAll();
+							onClose();
+							router.push('/admin/other');
+						}}
+					>
+						ไปยังหน้า Other
 					</Button>
 				</DialogActions>
 			</Dialog>

@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState, useMemo } from "react";
+import { useRouter } from "next/navigation";
 import {
     Dialog,
     DialogTitle,
@@ -56,9 +57,11 @@ type ConflictData = {
 };
 
 const EditSubjectModal: React.FC<Props> = ({ open, onClose, subjects, allSubjects, sectors, onEdited }) => {
+    const router = useRouter();
     const [rows, setRows] = useState<EditRow[]>([]);
     const [saving, setSaving] = useState(false);
     const [conflictAlert, setConflictAlert] = useState<{ open: boolean; conflicts: ConflictData[] } | null>(null);
+    const [embedErrorModal, setEmbedErrorModal] = useState<{ open: boolean; createdCount: number }>({ open: false, createdCount: 0 });
 
     // Initialize rows when performing new edit
     useEffect(() => {
@@ -186,12 +189,12 @@ const EditSubjectModal: React.FC<Props> = ({ open, onClose, subjects, allSubject
             }
 
             // 3. Save Edited Rows
+            const changedNameIDs: number[] = [];
+
             await Promise.all(rows.map(async (row) => {
                 const { id, code, name, credit, language, education_sectorId, isRequire, prerequisiteId } = row;
 
                 // Construct payload
-                // If elective (sectorId null), isRequire false.
-                // If sectorId not null, isRequire true.
                 const payload: any = {
                     code,
                     name,
@@ -200,33 +203,17 @@ const EditSubjectModal: React.FC<Props> = ({ open, onClose, subjects, allSubject
                     prerequisiteId
                 };
 
+                // Clear old embedding if name changed
+                if (name !== row.original.name) {
+                    payload.name_embedding = null;
+                }
+
                 if (education_sectorId === null) {
                     payload.isRequire = false;
-                    // API requires course_yearId if verified not optional? actually API logic:
-                    // if isRequire false -> must provide course_yearId.
-                    // We can use the original's course_yearId or derived from props if we had it.
-                    // But `EditSubjectModal` props doesn't have courseYearId explicitly passed unless we add it?
-                    // Actually, `allSubjects` contains subjects which have `course_yearId`.
-                    // We can reuse original.course_yearId.
                     payload.course_yearId = row.original.course_yearId;
-                    // Warning: If original was Require, it might not have course_yearId set in DB? 
-                    // (Schema says both are Int?, but API logic enforces one or the other).
-                    // If switching from Require to Elective, we need course_yearId.
-                    // We should probably find it from the sector if needed?
-                    // Or we just don't support switching Require <-> Elective if it's too risky without courseYearId context.
-                    // "The user wants to allow editing sector". Changing to 'elective' (null sector) maps to isRequire=false.
-                    // If we switch to elective, we need the course_yearId.
-                    // Let's safe guard:
                     if (!payload.course_yearId) {
-                        // Find any sector from `sectors`, get its course_yearId?
                         if (sectors.length > 0) {
-                            // This assumes all sectors in list belong to same course year.
-                            // Sectors prop comes from SubjectTable which comes from SubjectSection (courseYearId specific).
-                            // So safely picking one sector's course_yearId (if stored in Frontend?)
-                            // Actually `educationSector` type has `course_yearId`.
                             const anySector = sectors[0];
-                            // Wait, type definition `educationSector` might not have it loaded?
-                            // Let's check type.
                             // It has `course_yearId?: number`.
                             if (anySector && anySector.course_yearId) {
                                 payload.course_yearId = anySector.course_yearId;
@@ -248,7 +235,26 @@ const EditSubjectModal: React.FC<Props> = ({ open, onClose, subjects, allSubject
                     const txt = await res.text();
                     throw new Error(txt || `Failed to update subject ${id}`);
                 }
+
+                if (name !== row.original.name) {
+                    changedNameIDs.push(id);
+                }
             }));
+
+            // 4. Re-embed if any name changed
+            if (changedNameIDs.length > 0) {
+                const embedres = await fetch("/api/embed", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ subject_id: changedNameIDs }),
+                });
+
+                if (!embedres.ok) {
+                    console.error("Embed failed");
+                    setEmbedErrorModal({ open: true, createdCount: changedNameIDs.length });
+                    return;
+                }
+            }
 
             onEdited();
         } catch (error) {
@@ -417,6 +423,51 @@ const EditSubjectModal: React.FC<Props> = ({ open, onClose, subjects, allSubject
                     <Button onClick={() => setConflictAlert(null)} color="inherit">ยกเลิก</Button>
                     <Button onClick={() => handleSave(true)} variant="contained" color="error">
                         ยืนยันและลบความสัมพันธ์
+                    </Button>
+                </DialogActions>
+            </Dialog>
+
+            {/* Embed Error Modal */}
+            <Dialog open={embedErrorModal.open} maxWidth="sm" fullWidth>
+                <DialogTitle>บันทึกวิชาสำเร็จ (แต่ AI ยังไม่รู้จักชื่อวิชาใหม่)</DialogTitle>
+                <DialogContent>
+                    <Typography>
+                        ระบบได้บันทึกการแก้ไขข้อมูลวิชาเรียบร้อยแล้ว (รวมถึงวิชาที่เปลี่ยนชื่อจำนวน {embedErrorModal.createdCount} วิชา)
+                    </Typography>
+                    <Typography color="error" sx={{ mt: 1 }}>
+                        อย่างไรก็ตาม เกิดข้อขัดข้องในขั้นตอน "การสอน AI" ทำให้ระบบแชทบอทยังไม่สามารถค้นหาหรือตอบคำถามโดยใช้ชื่อวิชาใหม่ได้
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+                        เพื่อแก้ไขปัญหานี้ กรุณาไปที่เมนู "Other" (อื่นๆ) และคลิกปุ่มทำการสอน AI ใหม่อีกครั้ง
+                        <br />
+                        <Typography component="span" variant="body2" color="text.secondary" sx={{ display: 'block', mt: 0.5 }}>
+                            *หมายเหตุ: หากยังพบปัญหา อาจเป็นเพราะเซิร์ฟเวอร์ AI กำลังปิดปรับปรุงอยู่ กรุณารอและลองใหม่อีกครั้งในภายหลัง
+                        </Typography>
+                    </Typography>
+                </DialogContent>
+                <DialogActions sx={{ p: 2, justifyContent: 'end', gap: 1 }}>
+                    <Button
+                        variant="outlined"
+                        color="inherit"
+                        onClick={() => {
+                            setEmbedErrorModal({ open: false, createdCount: 0 });
+                            onEdited();
+                            handleClose();
+                        }}
+                    >
+                        เข้าใจแล้ว
+                    </Button>
+                    <Button
+                        variant="contained"
+                        color="primary"
+                        onClick={() => {
+                            setEmbedErrorModal({ open: false, createdCount: 0 });
+                            onEdited();
+                            handleClose();
+                            router.push('/admin/other');
+                        }}
+                    >
+                        ไปยังหน้า Other
                     </Button>
                 </DialogActions>
             </Dialog>
