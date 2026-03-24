@@ -1,4 +1,4 @@
-import { Box, Divider, Paper, Typography, TextField, InputAdornment, IconButton, Backdrop, CircularProgress, Avatar, Menu, MenuItem, ListItemIcon, ListItemText, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions, Button } from '@mui/material'
+import { Box, Divider, Paper, Typography, TextField, InputAdornment, IconButton, Backdrop, CircularProgress, Avatar, Menu, MenuItem, ListItemIcon, ListItemText, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions, Button, Tooltip } from '@mui/material'
 import SendIcon from '@mui/icons-material/Send'
 import SmartToyIcon from '@mui/icons-material/SmartToy'
 import PersonIcon from '@mui/icons-material/Person'
@@ -8,6 +8,7 @@ import TextSnippetIcon from '@mui/icons-material/TextSnippet'
 import TableChartIcon from '@mui/icons-material/TableChart'
 import DeleteSweepIcon from '@mui/icons-material/DeleteSweep'
 import WarningAmberIcon from '@mui/icons-material/WarningAmber';
+import FlagIcon from '@mui/icons-material/Flag';
 
 import React, { useRef, useEffect, useState } from 'react'
 import { useChat } from '@/lib/hooks/useChat'
@@ -129,6 +130,23 @@ const ChatBoxCard = () => {
                         >
                             <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap' }}>{msg.content}</Typography>
                         </Paper>
+                        {msg.role !== 'user' && (
+                            <Tooltip title="Report" placement='top' arrow>
+                                <IconButton
+                                    size="small"
+                                    onClick={() => { }}
+                                    sx={{
+                                        height: '50%',
+                                        '&:hover': {
+                                            color: 'error.main',
+                                            bgcolor: 'none',
+                                        },
+                                    }}
+                                >
+                                    <FlagIcon fontSize="small" />
+                                </IconButton>
+                            </Tooltip>
+                        )}
                     </Box>
                 ))}
                 {isSending && (
