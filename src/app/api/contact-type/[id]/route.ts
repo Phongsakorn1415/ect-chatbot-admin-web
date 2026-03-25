@@ -42,11 +42,30 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
 }
 
 //DELETE /api/contact-type/[id]
-//Delete a contact type
+//Delete a contact type. Use ?force=true to also delete all associated contacts.
 export async function DELETE(req: Request, { params }: { params: { id: string } }) {
     const { id } = params;
+    const url = new URL(req.url);
+    const force = url.searchParams.get('force') === 'true';
 
     try {
+        const contactCount = await db.contact.count({
+            where: { contact_typeId: Number(id) }
+        });
+
+        if (contactCount > 0 && !force) {
+            return NextResponse.json(
+                { error: "CONTACTS_EXIST", contactCount },
+                { status: 409 }
+            );
+        }
+
+        if (force && contactCount > 0) {
+            await db.contact.deleteMany({
+                where: { contact_typeId: Number(id) }
+            });
+        }
+
         await db.contact_type.delete({
             where: { id: Number(id) },
         });

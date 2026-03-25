@@ -1,8 +1,10 @@
 import React, { useState, useEffect, useCallback } from "react"
-import { Box, Button, Paper, TextField, Typography } from "@mui/material"
+import { Box, Button, IconButton, Paper, TextField, Typography } from "@mui/material"
 import { useParams } from "next/navigation"
 
 import AddIcon from '@mui/icons-material/Add';
+import DeleteOutlinedIcon from '@mui/icons-material/DeleteOutlined';
+import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 
 import { ContactInfo, ContactType } from "@/lib/types/contact"
 
@@ -81,7 +83,7 @@ const ContactSection = ({ contactData, accountId: accountIdProp }: ContactSectio
     const handleSave = useCallback(async (id: number) => {
         try {
             setSavingId(id);
-            const res = await fetch(`/api/contact/${id}` , {
+            const res = await fetch(`/api/contact/${id}`, {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ detail: draftValue })
@@ -106,7 +108,7 @@ const ContactSection = ({ contactData, accountId: accountIdProp }: ContactSectio
     const handleDelete = useCallback(async (id: number) => {
         try {
             setDeletingId(id);
-            if(!confirm("คุณแน่ใจหรือว่าต้องการลบช่องทางติดต่อรายการนี้?")) return;
+            if (!confirm("คุณแน่ใจหรือว่าต้องการลบช่องทางติดต่อรายการนี้?")) return;
 
             const res = await fetch(`/api/contact/${id}`, { method: 'DELETE' });
             if (!res.ok) {
@@ -207,24 +209,21 @@ const ContactSection = ({ contactData, accountId: accountIdProp }: ContactSectio
                                                                 </>
                                                             ) : (
                                                                 <>
-                                                                    <Button
-                                                                        variant="outlined"
+                                                                    <IconButton
                                                                         color="warning"
                                                                         disabled={isDeleting}
                                                                         onClick={() => handleStartEdit(ci.id, ci.value ?? "")}
                                                                     >
-                                                                        แก้ไข
-                                                                    </Button>
-                                                                    <Button
-                                                                        variant="contained"
+                                                                        <EditOutlinedIcon />
+                                                                    </IconButton>
+                                                                    <IconButton
                                                                         color="error"
                                                                         disabled={isDeleting}
                                                                         onClick={() => handleDelete(ci.id)}
                                                                         loading={isDeleting ? true : undefined}
                                                                     >
-                                                                        {/* {isDeleting ? 'กำลังลบ…' : 'ลบ'} */}
-                                                                        ลบ
-                                                                    </Button>
+                                                                        <DeleteOutlinedIcon />
+                                                                    </IconButton>
                                                                 </>
                                                             )}
                                                         </Box>

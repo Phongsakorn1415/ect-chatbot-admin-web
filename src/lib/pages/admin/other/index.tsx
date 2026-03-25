@@ -7,6 +7,9 @@ import ChatBubbleOutlineIcon from '@mui/icons-material/ChatBubbleOutline';
 import { useRouter } from 'next/navigation';
 import CardMenu from '@/lib/components/pageComponent/other/cardMenu';
 import CustomAlert from '@/lib/components/customAlert';
+import ConnectWithoutContactIcon from '@mui/icons-material/ConnectWithoutContact';
+
+import ManageContactType from '@/lib/components/pageComponent/other/manageConatactType';
 
 const OtherPage = () => {
   const router = useRouter();
@@ -23,6 +26,8 @@ const OtherPage = () => {
     subject_id: [],
     teacher_id: []
   });
+
+  const [openManageContactType, setOpenManageContactType] = useState(false);
 
   const fetchEmbeddingCount = async () => {
     setIsApiLoading(true);
@@ -111,6 +116,15 @@ const OtherPage = () => {
       action: () => router.push('/admin/other/reported-chat'),
       loading: false,
       disabled: false
+    },
+    {
+      title: 'จัดการประเภทข้อมูลของช่องทางการติดต่อ',
+      description: 'จัดการประเภทข้อมูลของช่องทางการติดต่อ',
+      icon: <ConnectWithoutContactIcon sx={{ fontSize: 40, color: 'primary.main' }} />,
+      actionText: 'จัดการ',
+      action: () => setOpenManageContactType(true),
+      loading: false,
+      disabled: false
     }
   ];
 
@@ -126,6 +140,8 @@ const OtherPage = () => {
       {!!snackbarMessage && (
         <CustomAlert message={snackbarMessage} severity={snackbarSeverity} />
       )}
+
+      <ManageContactType open={openManageContactType} onClose={() => setOpenManageContactType(false)} />
     </>
   )
 }
