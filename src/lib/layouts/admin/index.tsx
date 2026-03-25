@@ -1,13 +1,19 @@
 "use client";
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Toolbar, Grid } from '@mui/material';
 import NavBar from '@/lib/components/NavBar';
 import MainDrawer from '@/lib/components/MainDrawer';
 import { DrawerProvider, useDrawer } from '@/lib/contexts/DrawerContext';
 
-const AdminLayoutInner = ({ children }: { children: React.ReactNode }) => {
+const AdminLayoutInner = ({ children, wasLoggedInMaxAge }: { children: React.ReactNode, wasLoggedInMaxAge: number }) => {
   const drawer = useDrawer();
-  if (!drawer) return null; // Should never happen
+
+  useEffect(() => {
+    // เซ็ตคุ้กกี้เพื่อบอกว่า "เคย Login แล้ว" โดยมีอายุคุ้มครองตามที่แผนระบุ (JWT + 1 วัน)
+    document.cookie = `was-logged-in=true; path=/; max-age=${wasLoggedInMaxAge}`;
+  }, [wasLoggedInMaxAge]);
+
+  if (!drawer) return null;
   const { isOpen, toggle, close, handleTransitionEnd } = drawer;
 
   return (
@@ -30,10 +36,10 @@ const AdminLayoutInner = ({ children }: { children: React.ReactNode }) => {
   );
 };
 
-const AdminLayout = ({ children }: { children: React.ReactNode }) => {
+const AdminLayout = ({ children, wasLoggedInMaxAge }: { children: React.ReactNode, wasLoggedInMaxAge: number }) => {
   return (
     <DrawerProvider>
-      <AdminLayoutInner>{children}</AdminLayoutInner>
+      <AdminLayoutInner wasLoggedInMaxAge={wasLoggedInMaxAge}>{children}</AdminLayoutInner>
     </DrawerProvider>
   );
 };

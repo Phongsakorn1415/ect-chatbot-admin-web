@@ -25,6 +25,8 @@ const MainDrawer = ({ isOpen, HandleDrawerClose, handleDrawerTransitionEnd }: Ma
   if (status === 'loading' || !session) return null
 
   const handleSignOut = async () => {
+    // ลบคุ้กกี้ร่องรอยออกเมื่อจงใจกด Logout เอง
+    document.cookie = "was-logged-in=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
     await signOut({ redirect: false })
     router.push('/')
   }

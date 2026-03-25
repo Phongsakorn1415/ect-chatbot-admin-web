@@ -12,7 +12,14 @@ export async function middleware(req: any) {
   const { pathname } = req.nextUrl;
 
   if (pathname.startsWith("/admin") && !user) {
-    return NextResponse.redirect(new URL("/", req.url));
+    // เช็คคุ้กกี้ "was-logged-in" ที่เราสร้างขึ้นเองใน Admin Layout
+    const wasLoggedIn = req.cookies.get("was-logged-in");
+
+    if (wasLoggedIn) {
+      return NextResponse.redirect(new URL("/?session=expired", req.url));
+    } else {
+      return NextResponse.redirect(new URL("/", req.url));
+    }
   }
   if (pathname === "/" && user) {
     return NextResponse.redirect(new URL("/admin", req.url));
@@ -43,9 +50,7 @@ export async function middleware(req: any) {
   }
 
   // Account management page access control
-  if (pathname.startsWith("/admin/accounts") && !user) {
-    return NextResponse.redirect(new URL("/", req.url));
-  } else if (
+  if (
     pathname.startsWith("/admin/accounts") &&
     user &&
     user.role == "TEACHER"
@@ -54,13 +59,7 @@ export async function middleware(req: any) {
   }
 
   // other pages access control
-  if (pathname.startsWith("/admin/other") && !user) {
-    return NextResponse.redirect(new URL("/", req.url));
-  } else if (
-    pathname.startsWith("/admin/other") &&
-    user &&
-    user.role == "TEACHER"
-  ) {
+  if (pathname.startsWith("/admin/other") && user && user.role == "TEACHER") {
     return NextResponse.redirect(new URL("/admin", req.url));
   }
 }
