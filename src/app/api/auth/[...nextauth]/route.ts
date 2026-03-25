@@ -2,6 +2,7 @@ import NextAuth from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import type { NextAuthOptions } from "next-auth";
 import bcrypt from "bcrypt";
+import { parseDuration } from "@/lib/utils/duration";
 
 export const authOptions: NextAuthOptions = {
   providers: [
@@ -59,6 +60,7 @@ export const authOptions: NextAuthOptions = {
   ],
   session: {
     strategy: "jwt",
+    maxAge: parseDuration(process.env.JWT_EXPIRES_IN || "1d"),
   },
   secret: process.env.NEXTAUTH_SECRET,
   callbacks: {
