@@ -7,6 +7,7 @@ import useBreakPointResolution from '@/lib/services/BreakPointResolusion';
 import PersonOffIcon from '@mui/icons-material/PersonOff';
 import CustomAlert from '@/lib/components/customAlert';
 import { useSession } from 'next-auth/react'
+import ChangePasswordModal from '@/lib/components/ChangePasswordModal';
 
 const ProfileCard = ({ accountData, isAccountDataLoaded, onSaved }: { accountData: Account | null; isAccountDataLoaded: boolean; onSaved?: (updated: any) => void }) => {
     const { isMobile, isTablet, isDesktop } = useBreakPointResolution();
@@ -26,6 +27,7 @@ const ProfileCard = ({ accountData, isAccountDataLoaded, onSaved }: { accountDat
     const [saving, setSaving] = React.useState(false);
     const [alert, setAlert] = React.useState<{ message: string; severity: 'error' | 'warning' | 'info' | 'success' } | null>(null);
     const [embedErrorModal, setEmbedErrorModal] = React.useState<{ open: boolean, data?: any }>({ open: false });
+    const [changePasswordOpen, setChangePasswordOpen] = React.useState(false);
 
     // Sync form with incoming account data when it changes or when entering edit mode
     React.useEffect(() => {
@@ -195,7 +197,7 @@ const ProfileCard = ({ accountData, isAccountDataLoaded, onSaved }: { accountDat
                                     <Tooltip title="อีเมลไม่สามารถแก้ไขได้" arrow>
                                         <Typography variant='h6'>{accountData.email}</Typography>
                                     </Tooltip>
-                                    <Button variant="outlined" sx={{ mt: 1 }}>เปลี่ยนรหัสผ่าน</Button>
+                                    <Button variant="outlined" sx={{ mt: 1 }} onClick={() => setChangePasswordOpen(true)}>เปลี่ยนรหัสผ่าน</Button>
                                 </Paper>
                             </Grid>
                             <Grid size={{ xs: 12, sm: 6 }}>
@@ -268,6 +270,7 @@ const ProfileCard = ({ accountData, isAccountDataLoaded, onSaved }: { accountDat
             </Dialog>
 
             {alert && <CustomAlert message={alert.message} severity={alert.severity} />}
+            <ChangePasswordModal open={changePasswordOpen} onClose={() => setChangePasswordOpen(false)} />
         </>
     )
 }

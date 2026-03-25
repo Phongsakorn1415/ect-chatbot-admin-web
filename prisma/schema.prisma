@@ -26,9 +26,10 @@ model User {
   role           Role      @default(TEACHER)
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
-  invites        Invite[]  @relation("UserInvites")
-  teach          teach[]
-  contact        contact[]
+  invites          Invite[]           @relation("UserInvites")
+  teach            teach[]
+  contact          contact[]
+  otpVerifications OtpVerification[]
 
 }
 
@@ -149,6 +150,19 @@ model ChatLog {
   @@map("chat_logs")
 }
 
+model OtpVerification {
+  id        Int        @id @default(autoincrement())
+  userId    Int
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  otpHash   String
+  purpose   OtpPurpose
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime   @default(now())
+
+  @@index([userId, purpose])
+}
+
 enum Role {
   TEACHER
   ADMIN
@@ -170,4 +184,9 @@ enum FeeUnit {
   DAY
   WEEK
   MONTH
+}
+
+enum OtpPurpose {
+  CHANGE_PASSWORD
+  RESET_PASSWORD
 }
