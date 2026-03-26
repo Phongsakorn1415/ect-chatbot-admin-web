@@ -1,9 +1,13 @@
 import { db } from "@/lib/database";
 import { NextResponse } from "next/server";
+import { requireAuth } from "@/lib/utils/auth";
 
 //GET /api/contact-type
 //Fetch all contact types
 export async function GET() {
+    const { error } = await requireAuth(["SUPER_ADMIN", "ADMIN"]);
+    if (error) return error;
+
     const contactTypes = await db.contact_type.findMany();
     return NextResponse.json({ data : contactTypes }, { status: 200 });
 }
@@ -11,6 +15,9 @@ export async function GET() {
 //POST /api/contact-type
 //Create a new contact type
 export async function POST(request: Request) {
+    const { error } = await requireAuth(["SUPER_ADMIN", "ADMIN"]);
+    if (error) return error;
+
     const { type } = await request.json();
     const newContactType = await db.contact_type.create({
         data: {

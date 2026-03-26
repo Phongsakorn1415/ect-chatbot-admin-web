@@ -1,5 +1,6 @@
 import { db } from "@/lib/database";
 import { NextResponse } from "next/server";
+import { requireAuth } from "@/lib/utils/auth";
 
 //GET /api/course/subject
 // Retrieve all subjects
@@ -19,6 +20,9 @@ export async function GET() {
 //POST /api/course/subject
 // Create a new subject
 export async function POST(req: Request) {
+  const { error } = await requireAuth(["SUPER_ADMIN", "ADMIN"]);
+  if (error) return error;
+
   try {
     const body = await req.json();
     const {

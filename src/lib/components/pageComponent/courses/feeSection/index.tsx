@@ -9,9 +9,10 @@ type Props = {
 	courseYearId: number | null;
 	courseFee: CourseFee | null;
 	onUpdated?: (fee: CourseFee) => void;
+	isReadOnly?: boolean;
 };
 
-const FeeSection: React.FC<Props> = ({ courseYearId, courseFee, onUpdated }) => {
+const FeeSection: React.FC<Props> = ({ courseYearId, courseFee, onUpdated, isReadOnly }) => {
 	const [isEditMode, setIsEditMode] = React.useState(false);
 	const [normalFee, setNormalFee] = React.useState<number>(0);
 	const [summerFee, setSummerFee] = React.useState<number>(0);
@@ -99,28 +100,30 @@ const FeeSection: React.FC<Props> = ({ courseYearId, courseFee, onUpdated }) => 
 					</Typography>
 				</Grid>
 				<Grid size={6} sx={{ display: "flex", justifyContent: "end", alignItems: "center" }}>
-					{isEditMode ? (
-						<>
-							<Button
-								variant="contained"
-								color="error"
-								sx={{ mr: 2 }}
-								onClick={handleCancel}
-							>
-								ยกเลิก
+					{!isReadOnly && (
+						isEditMode ? (
+							<>
+								<Button
+									variant="contained"
+									color="error"
+									sx={{ mr: 2 }}
+									onClick={handleCancel}
+								>
+									ยกเลิก
+								</Button>
+								<Button
+									variant="contained"
+									color="success"
+									onClick={handleSave}
+								>
+									บันทึก
+								</Button>
+							</>
+						) : (
+							<Button variant="contained" color="warning" onClick={() => setIsEditMode(true)}>
+								แก้ไข
 							</Button>
-							<Button
-								variant="contained"
-								color="success"
-								onClick={handleSave}
-							>
-								บันทึก
-							</Button>
-						</>
-					) : (
-						<Button variant="contained" color="warning" onClick={() => setIsEditMode(true)}>
-							แก้ไข
-						</Button>
+						)
 					)}
 				</Grid>
 			</Grid>
@@ -151,4 +154,3 @@ const FeeSection: React.FC<Props> = ({ courseYearId, courseFee, onUpdated }) => 
 };
 
 export default FeeSection;
-

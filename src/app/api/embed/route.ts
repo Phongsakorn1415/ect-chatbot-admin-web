@@ -1,7 +1,11 @@
 import { db } from "@/lib/database";
 import { NextResponse } from "next/server";
+import { requireAuth } from "@/lib/utils/auth";
 
 export async function GET() {
+  const { error } = await requireAuth(["SUPER_ADMIN", "ADMIN"]);
+  if (error) return error;
+
   try {
     const response = await fetch(`${process.env.CHATBOT_API_URL}/embeddings`, {
       method: "GET",
@@ -25,6 +29,9 @@ export async function GET() {
 }
 
 export async function POST(req: Request) {
+  const { error } = await requireAuth(["SUPER_ADMIN", "ADMIN"]);
+  if (error) return error;
+
   try {
     const body = await req.json();
     let { subject_id, teacher_id } = body as {

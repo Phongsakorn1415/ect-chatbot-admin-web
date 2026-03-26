@@ -1,5 +1,6 @@
 import { db } from "@/lib/database";
 import { NextResponse } from "next/server";
+import { requireAuth } from "@/lib/utils/auth";
 
 //GET /api/course/course-year
 //Get all course years
@@ -16,13 +17,16 @@ export async function GET(){
         );
     } catch (error) {
         console.error('Error fetching course years:', error);
-        return NextResponse.error();
+        return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
     }
 }
 
 //POST /api/course/course-year
 //Create a new course year with tuition fees
 export async function POST(req: Request) {
+    const { error } = await requireAuth(["SUPER_ADMIN", "ADMIN"]);
+    if (error) return error;
+
     try {
         const body = await req.json();
         const { year, normalFee, summerFee } = body;
@@ -45,6 +49,6 @@ export async function POST(req: Request) {
         );
     } catch (error) {
         console.error('Error creating course year:', error);
-        return NextResponse.error();
+        return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
     }
 }

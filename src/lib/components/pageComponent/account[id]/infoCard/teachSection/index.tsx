@@ -22,9 +22,10 @@ type CourseYear = { id: number; year: number };
 
 interface TeachSectionProps {
   accountId?: number
+  canEdit?: boolean
 }
 
-const TeachSection: React.FC<TeachSectionProps> = ({ accountId }) => {
+const TeachSection: React.FC<TeachSectionProps> = ({ accountId, canEdit }) => {
   const [TabValue, setTabValue] = useState(0);
   const [AllCourses, setAllCourses] = useState<CourseYear[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -382,8 +383,8 @@ const TeachSection: React.FC<TeachSectionProps> = ({ accountId }) => {
       <Box>
         <Typography variant="h6" sx={{ mb: 1 }}>วิชาที่สอนทั้งหมด</Typography>
         <Toolbar disableGutters sx={{ gap: 1, mb: 1 }}>
-          <Button size="small" variant="contained" startIcon={<AddIcon />} onClick={handleOpenAdd} disabled={!effectiveAccountId || AllCourses.length === 0}>เพิ่มวิชา</Button>
-          <Button size="small" color="error" variant="outlined" startIcon={<DeleteIcon />} onClick={handleRemoveSelected} disabled={selectedIds.size === 0}>ลบ ({selectedIds.size})</Button>
+          <Button size="small" variant="contained" startIcon={<AddIcon />} onClick={handleOpenAdd} disabled={!canEdit || !effectiveAccountId || AllCourses.length === 0}>เพิ่มวิชา</Button>
+          <Button size="small" color="error" variant="outlined" startIcon={<DeleteIcon />} onClick={handleRemoveSelected} disabled={!canEdit || selectedIds.size === 0}>ลบ ({selectedIds.size})</Button>
         </Toolbar>
         <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
           <Tabs value={TabValue} onChange={(event, newValue) => setTabValue(newValue)} aria-label="basic tabs example">
@@ -443,9 +444,11 @@ const TeachSection: React.FC<TeachSectionProps> = ({ accountId }) => {
                         <TableCell padding="checkbox">
                           <Checkbox
                             size="small"
+                            disabled={!canEdit}
                             indeterminate={visibleRows.length > 0 && allVisibleSelectedCount > 0 && allVisibleSelectedCount < visibleRows.length}
                             checked={visibleRows.length > 0 && allVisibleSelectedCount === visibleRows.length}
                             onChange={() => {
+                              if (!canEdit) return;
                               const ids = visibleRows.map(r => r.id);
                               const allSelected = ids.length > 0 && ids.every(id => selectedIds.has(id));
                               setSelectedIds(prev => {
@@ -467,9 +470,10 @@ const TeachSection: React.FC<TeachSectionProps> = ({ accountId }) => {
                         <TableRow key={row.id} hover>
                           <TableCell padding="checkbox">
                             <Checkbox
-                              size="small"
-                              checked={selectedIds.has(row.id)}
-                              onChange={() => handleToggleSelect(row.id)}
+                                size="small"
+                                disabled={!canEdit}
+                                checked={selectedIds.has(row.id)}
+                                onChange={() => canEdit && handleToggleSelect(row.id)}
                             />
                           </TableCell>
                           <TableCell>{row.subject_id?.code ?? '-'}</TableCell>

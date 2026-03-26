@@ -18,12 +18,6 @@ import {
     FormControl,
     FormLabel,
     Stack,
-    TableContainer,
-    Table,
-    TableHead,
-    TableRow,
-    TableCell,
-    TableBody,
 } from "@mui/material";
 import AddIcon from '@mui/icons-material/Add';
 import { educationSector } from "@/lib/types/course-year";
@@ -34,7 +28,7 @@ import { CustomTabPanel, a11yProps } from "@/lib/components/TabsProvider";
 
 // Using shared Subject type from src/lib/types/subject
 
-const SubjectSection: React.FC<{ courseYearId: number | null, courseYearYear?: number | null }> = ({ courseYearId, courseYearYear = null }) => {
+const SubjectSection: React.FC<{ courseYearId: number | null, courseYearYear?: number | null, isReadOnly?: boolean }> = ({ courseYearId, courseYearYear = null, isReadOnly }) => {
     const [value, setValue] = React.useState(0);
     const [allSemesters, setAllSemesters] = React.useState<educationSector[]>([]);
     const [subjectsMap, setSubjectsMap] = React.useState<Record<number, Subject[]>>({});
@@ -150,7 +144,7 @@ const SubjectSection: React.FC<{ courseYearId: number | null, courseYearYear?: n
 
     const handleChange = (_event: React.SyntheticEvent, newValue: number) => {
         // If clicking the add tab (last tab), open modal and keep current selection
-        if (newValue === allSemesters.length + 1) {
+        if (!isReadOnly && newValue === allSemesters.length + 1) {
             setOpenAdd(true);
             return;
         }
@@ -170,11 +164,11 @@ const SubjectSection: React.FC<{ courseYearId: number | null, courseYearYear?: n
 
     // Keep tab index within available bounds whenever semesters change
     React.useEffect(() => {
-        const maxSelectableIndex = (Array.isArray(allSemesters) ? allSemesters.length : 0) + 1; // includes elective and add tabs
+        const maxSelectableIndex = (Array.isArray(allSemesters) ? allSemesters.length : 0) + (isReadOnly ? 0 : 1); // includes elective and conditionally add tabs
         if (value > maxSelectableIndex) {
             setValue(0);
         }
-    }, [allSemesters, value]);
+    }, [allSemesters, value, isReadOnly]);
 
     const resetForm = () => {
         setYearInput("");
@@ -319,24 +313,24 @@ const SubjectSection: React.FC<{ courseYearId: number | null, courseYearYear?: n
                             aria-label="วิชาเลือก"
                             {...a11yProps(allSemesters.length)}
                         />
-                        <Tab
-                            icon={<AddIcon />}
-                            sx={{ color: 'black' }}
-                            aria-label="เพิ่มภาคการศึกษา"
-                            {...a11yProps(allSemesters.length + 1)}
-                        />
+                        {!isReadOnly && (
+                            <Tab
+                                icon={<AddIcon />}
+                                sx={{ color: 'black' }}
+                                aria-label="เพิ่มภาคการศึกษา"
+                                {...a11yProps(allSemesters.length + 1)}
+                            />
+                        )}
                     </Tabs>
                 </Box>
                 {
                     (Array.isArray(allSemesters) ? allSemesters : []).map((sector, index) => (
                         <CustomTabPanel key={sector.id} value={value} index={index}>
-                            {/* <Box sx={{ display: 'inline-block', gap: 2 }}>
-                                <Button variant="outlined" color="error" onClick={() => handleDelete(sector.id)} sx={{ mb: 2 }}>ลบภาคการศึกษานี้</Button>
-                                <Typography>รายการวิชา (Mockup): ปี {sector.year} {sector.semester !== 0 ? `ภาคการเรียนที่ ${sector.semester}` : "ภาคฤดูร้อน"}</Typography>
-                            </Box> */}
                             <Typography sx={{ mb: 2, fontSize: "125%", alignContent: "center" }}>
                                 รายการวิชา: ปี {sector.year} {sector.semester !== 0 ? `ภาคการเรียนที่ ${sector.semester}` : "ภาคฤดูร้อน"}
-                                <Button variant="outlined" color="error" onClick={() => handleDelete(sector.id)} sx={{ mb: 2, ml: 2 }}>ลบภาคการศึกษานี้</Button>
+                                {!isReadOnly && (
+                                    <Button variant="outlined" color="error" onClick={() => handleDelete(sector.id)} sx={{ mb: 2, ml: 2 }}>ลบภาคการศึกษานี้</Button>
+                                )}
                             </Typography>
 
                             <Box sx={{ width: '100%', overflow: 'hidden' }}>
@@ -349,6 +343,7 @@ const SubjectSection: React.FC<{ courseYearId: number | null, courseYearYear?: n
                                     courseYearId={courseYearId ?? null}
                                     courseYearYear={courseYearYear}
                                     onAdded={async () => { await fetchCourseYearSubjects(); }}
+                                    isReadOnly={isReadOnly}
                                 />
                             </Box>
 
@@ -370,6 +365,7 @@ const SubjectSection: React.FC<{ courseYearId: number | null, courseYearYear?: n
                             courseYearId={courseYearId ?? null}
                             courseYearYear={courseYearYear}
                             onAdded={async () => { await fetchCourseYearSubjects(); }}
+                            isReadOnly={isReadOnly}
                         />
                     </Box>
                 </CustomTabPanel>
@@ -421,10 +417,6 @@ const SubjectSection: React.FC<{ courseYearId: number | null, courseYearYear?: n
                                 <FormControlLabel value="summer" control={<Radio />} label="ภาคฤดูร้อน" />
                             </RadioGroup>
                         </FormControl>
-
-                        {/* {semesterMode === "number" && (
-                            
-                        )} */}
                     </Stack>
                 </DialogContent>
                 <DialogActions>

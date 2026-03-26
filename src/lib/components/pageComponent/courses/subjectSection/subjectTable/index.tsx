@@ -22,9 +22,10 @@ type Props = {
     courseYearId?: number | null;
     courseYearYear?: number | null;
     onAdded?: () => void;
+    isReadOnly?: boolean;
 };
 
-const SubjectTable: React.FC<Props> = ({ subjects, allSubjects = [], loading = false, context, sectors = [], courseYearId = null, courseYearYear = null, onAdded }) => {
+const SubjectTable: React.FC<Props> = ({ subjects, allSubjects = [], loading = false, context, sectors = [], courseYearId = null, courseYearYear = null, onAdded, isReadOnly }) => {
     // Local data safety
     const safeSubjects: Subject[] = subjects ?? [];
 
@@ -159,23 +160,29 @@ const SubjectTable: React.FC<Props> = ({ subjects, allSubjects = [], loading = f
                     onClear={() => { setSearchQuery(""); setPage(0); }}
                 />
 
-                <Button variant="outlined" onClick={() => setOpenAdd(true)}>เพิ่มวิชา</Button>
-                <Button variant="outlined" color="warning" disabled={selected.length === 0 || loading} onClick={() => setOpenEdit(true)}>แก้ไขวิชา ({selected.length})</Button>
-                <Button variant="outlined" color="error" disabled={selected.length === 0 || loading} onClick={handleDeleteSelectedSubject}>ลบวิชาที่เลือก ({selected.length})</Button>
+                {!isReadOnly && (
+                    <>
+                        <Button variant="outlined" onClick={() => setOpenAdd(true)}>เพิ่มวิชา</Button>
+                        <Button variant="outlined" color="warning" disabled={selected.length === 0 || loading} onClick={() => setOpenEdit(true)}>แก้ไขวิชา ({selected.length})</Button>
+                        <Button variant="outlined" color="error" disabled={selected.length === 0 || loading} onClick={handleDeleteSelectedSubject}>ลบวิชาที่เลือก ({selected.length})</Button>
+                    </>
+                )}
             </Box>
             <TableContainer>
                 <Table stickyHeader>
                     <TableHead>
                         <TableRow>
-                            <TableCell padding="checkbox">
-                                <Checkbox
-                                    indeterminate={indeterminateOnPage}
-                                    checked={allSelectedOnPage}
-                                    onChange={handleSelectAllOnPage}
-                                    disabled={loading || rowCountOnPage === 0}
-                                    inputProps={{ "aria-label": "select all on page" }}
-                                />
-                            </TableCell>
+                            {!isReadOnly && (
+                                <TableCell padding="checkbox">
+                                    <Checkbox
+                                        indeterminate={indeterminateOnPage}
+                                        checked={allSelectedOnPage}
+                                        onChange={handleSelectAllOnPage}
+                                        disabled={loading || rowCountOnPage === 0}
+                                        inputProps={{ "aria-label": "select all on page" }}
+                                    />
+                                </TableCell>
+                            )}
                             <TableCell>รหัสวิชา</TableCell>
                             <TableCell>ชื่อวิชา</TableCell>
                             <TableCell>หน่วยกิต</TableCell>
@@ -187,14 +194,14 @@ const SubjectTable: React.FC<Props> = ({ subjects, allSubjects = [], loading = f
                             if (loading) {
                                 return (
                                     <TableRow>
-                                        <TableCell colSpan={5} align="center">กำลังโหลด...</TableCell>
+                                        <TableCell colSpan={isReadOnly ? 4 : 5} align="center">กำลังโหลด...</TableCell>
                                     </TableRow>
                                 );
                             }
                             if (!subjects || safeSubjects.length === 0) {
                                 return (
                                     <TableRow>
-                                        <TableCell colSpan={5} align="center">ไม่มีข้อมูลวิชา</TableCell>
+                                        <TableCell colSpan={isReadOnly ? 4 : 5} align="center">ไม่มีข้อมูลวิชา</TableCell>
                                     </TableRow>
                                 );
                             }
@@ -207,6 +214,7 @@ const SubjectTable: React.FC<Props> = ({ subjects, allSubjects = [], loading = f
                                         checked={checked}
                                         disabled={loading}
                                         onToggle={() => handleRowToggle(subject.id)}
+                                        isReadOnly={isReadOnly}
                                     />
                                 );
                             });

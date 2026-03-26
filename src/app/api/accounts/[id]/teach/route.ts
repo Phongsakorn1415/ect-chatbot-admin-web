@@ -1,5 +1,6 @@
 import { db } from "@/lib/database";
 import { NextRequest, NextResponse } from "next/server";
+import { requireAuth } from "@/lib/utils/auth";
 
 // GET /api/accounts/[id]/teach or /api/accounts/[id]/teach?course_year=2023
 // Fetch contact information for a specific account optionally filtered by course year
@@ -7,6 +8,9 @@ export async function GET(
     request: NextRequest,
     context: { params: Promise<{ id: string }> }
 ) {
+    const { error } = await requireAuth(["SUPER_ADMIN", "ADMIN"]);
+    if (error) return error;
+
     try {
         const { id } = await context.params;
         const accountIdNum = Number(id);
@@ -48,7 +52,7 @@ export async function GET(
                             select: {
                                 id: true,
                                 year: true,
-                            }
+                              }
                         }
                     }
                 }

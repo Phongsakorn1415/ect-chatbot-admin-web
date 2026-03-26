@@ -13,7 +13,7 @@ import Divider from '@mui/material/Divider';
 import { useRouter, usePathname } from 'next/navigation';
 
 // Page-scoped drawer: overlays on mobile/tablet; reserves space on desktop
-const MenuDrawer: React.FC<PageDrawerProps> = ({ isOpen, drawerWidth, items, showAddButton = false, addButtonText, onAddButtonClick }) => {
+const MenuDrawer: React.FC<PageDrawerProps> = ({ isOpen, drawerWidth, items, showAddButton = false, addButtonText, onAddButtonClick, isReadOnly }) => {
   const router = useRouter();
   const pathname = usePathname();
   const { isMobile, isTablet } = useBreakPointResolution();
@@ -78,13 +78,6 @@ const MenuDrawer: React.FC<PageDrawerProps> = ({ isOpen, drawerWidth, items, sho
             <React.Fragment key={item.id}>
               <ListItem disablePadding>
                 <ListItemButton onClick={item.onClick} selected={item.selected}>
-                  {/* {
-                    item.status && (
-                      <ListItemIcon>
-                        {item.status === 'PUBLISHED' ? <PublicIcon color="success" /> : <PublicOffIcon color="disabled" />}
-                      </ListItemIcon>
-                    )
-                  } */}
                   <ListItemText primary={
                     <Box component="span" sx={{ display: 'flex', alignItems: 'center' }}>
                       {item.status && (
@@ -139,16 +132,20 @@ const MenuDrawer: React.FC<PageDrawerProps> = ({ isOpen, drawerWidth, items, sho
           </ListItem>
         )}
       </List>
-      <Divider />
-      <Typography variant="h6" sx={{ pt: 2, pl: 2 }}>อื่น ๆ</Typography>
-      <List>
-        <ListItem disablePadding>
-          <ListItemButton onClick={() => router.push('/admin/courses/late-fee')} selected={pathname.endsWith('/late-fee')}>
-            <ListItemIcon sx={{ minWidth: 40 }}><WatchLaterIcon /></ListItemIcon>
-            <ListItemText primary="ค่าปรับลงทะเบียนช้า" sx={{ textAlign: 'left' }} />
-          </ListItemButton>
-        </ListItem>
-      </List>
+      {!isReadOnly && (
+        <>
+          <Divider />
+          <Typography variant="h6" sx={{ pt: 2, pl: 2 }}>อื่น ๆ</Typography>
+          <List>
+            <ListItem disablePadding>
+              <ListItemButton onClick={() => router.push('/admin/courses/late-fee')} selected={pathname.endsWith('/late-fee')}>
+                <ListItemIcon sx={{ minWidth: 40 }}><WatchLaterIcon /></ListItemIcon>
+                <ListItemText primary="ค่าปรับลงทะเบียนช้า" sx={{ textAlign: 'left' }} />
+              </ListItemButton>
+            </ListItem>
+          </List>
+        </>
+      )}
     </Drawer>
   )
 }
