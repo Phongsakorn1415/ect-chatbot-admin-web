@@ -1,5 +1,6 @@
 import { db } from "@/lib/database";
 import { NextResponse } from "next/server";
+import { requireAuth } from "@/lib/utils/auth";
 
 // GET /api/course/course-year/[id]/sector
 // Return all sectors by course year id (path param)
@@ -51,7 +52,7 @@ export async function GET(
     return NextResponse.json({ data: courseSector }, { status: 200 });
   } catch (error) {
     console.error("Error fetching course sector:", error);
-    return NextResponse.error();
+    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }
 
@@ -61,6 +62,9 @@ export async function POST(
   request: Request,
     { params }: { params: Promise<{ id: string }> }
 ) {
+  const { error } = await requireAuth(["SUPER_ADMIN", "ADMIN"]);
+  if (error) return error;
+
   try {
     const { id } = await params;
     const idNum = Number(id);
@@ -119,8 +123,6 @@ export async function POST(
     return NextResponse.json({ data: newSector }, { status: 201 });
   } catch (error) {
     console.error("Error creating course sector:", error);
-    return NextResponse.error();
+    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }
-
-// DELETE /api/course/course-year/[id]/sector

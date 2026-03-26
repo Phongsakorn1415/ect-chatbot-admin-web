@@ -7,9 +7,10 @@ interface Props {
   checked: boolean;
   disabled?: boolean;
   onToggle: () => void;
+  isReadOnly?: boolean;
 }
 
-const SubjectRow: React.FC<Props> = ({ subject, checked, disabled = false, onToggle }) => {
+const SubjectRow: React.FC<Props> = ({ subject, checked, disabled = false, onToggle, isReadOnly }) => {
   return (
     <TableRow
       key={subject.id}
@@ -18,13 +19,15 @@ const SubjectRow: React.FC<Props> = ({ subject, checked, disabled = false, onTog
       aria-checked={checked}
       selected={checked}
     >
-      <TableCell padding="checkbox">
-        <Checkbox
-          checked={checked}
-          onChange={onToggle}
-          disabled={disabled}
-        />
-      </TableCell>
+      {!isReadOnly && (
+        <TableCell padding="checkbox">
+          <Checkbox
+            checked={checked}
+            onChange={onToggle}
+            disabled={disabled}
+          />
+        </TableCell>
+      )}
       <TableCell>{subject.code ?? '-'}</TableCell>
       <TableCell>{subject.name ?? '-'}</TableCell>
       <TableCell>{subject.credit ?? '-'}</TableCell>

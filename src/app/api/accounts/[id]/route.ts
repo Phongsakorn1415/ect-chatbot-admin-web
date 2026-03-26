@@ -1,10 +1,13 @@
 import { db } from "@/lib/database";
 import { NextResponse } from "next/server";
-import bcrypt from "bcrypt";
+import { requireAuth } from "@/lib/utils/auth";
 
 // GET /api/accounts/[id]
 // get account by id
 export async function GET(request: Request, { params }: { params: { id: string } }) {
+    const { error } = await requireAuth(["SUPER_ADMIN", "ADMIN"]);
+    if (error) return error;
+
     try {
         const { id } = await params;
         const account = await db.user.findUnique({
@@ -25,33 +28,53 @@ export async function GET(request: Request, { params }: { params: { id: string }
         }
         return NextResponse.json({ data: account }, { status: 200 });
     } catch (error) {
-        return NextResponse.error();
+        return NextResponse.json({ message: "Internal Server Error" }, { status: 500 });
     }
 }
 
-//PATH /api/accounts/[id]
+// PATH /api/accounts/[id]
 // edit account by id
 export async function PATCH(request: Request, { params }: { params: { id: string } }) {
+    const { session, error } = await requireAuth(["SUPER_ADMIN", "ADMIN"]);
+    if (error) return error;
+
+    const viewerRole = (session?.user as any).role;
+    const viewerId = (session?.user as any).id;
+
     try {
         const { id } = params;
         const body = await request.json();
         const { title, firstName, lastName, role, name_embedding } = body;
 
-        // Fetch current user to enforce role constraints
-        const current = await db.user.findUnique({
+        // Fetch target user to enforce role constraints
+        const target = await db.user.findUnique({
             where: { id: Number(id) },
-            select: { role: true },
+            select: { role: true, id: true },
         });
-        if (!current) {
+
+        if (!target) {
             return NextResponse.json({ message: "User not found" }, { status: 404 });
         }
 
-        // Disallow changing role of SUPER_ADMIN
-        if (current.role === 'SUPER_ADMIN' && role && role !== 'SUPER_ADMIN') {
+        // 1. ADMIN cannot edit other ADMIN or SUPER_ADMIN (except themselves)
+        if (viewerRole === 'ADMIN' && target.id !== Number(viewerId)) {
+            if (target.role === 'ADMIN' || target.role === 'SUPER_ADMIN') {
+                return NextResponse.json({ message: 'ADMIN cannot edit other ADMIN or SUPER ADMIN accounts' }, { status: 403 });
+            }
+        }
+
+        // 2. ADMIN cannot change roles at all (only SUPER_ADMIN can)
+        if (viewerRole === 'ADMIN' && role && role !== target.role) {
+            return NextResponse.json({ message: 'ADMIN cannot change user roles' }, { status: 403 });
+        }
+
+        // 3. TARGET is SUPER_ADMIN: role cannot be changed by anyone (even self via this endpoint)
+        if (target.role === 'SUPER_ADMIN' && role && role !== 'SUPER_ADMIN') {
             return NextResponse.json({ message: 'Cannot change role of SUPER ADMIN' }, { status: 403 });
         }
-        // Disallow setting any user to SUPER_ADMIN via this endpoint
-        if (current.role !== 'SUPER_ADMIN' && role === 'SUPER_ADMIN') {
+
+        // 4. Assigning SUPER_ADMIN role is forbidden
+        if (target.role !== 'SUPER_ADMIN' && role === 'SUPER_ADMIN') {
             return NextResponse.json({ message: 'Cannot assign SUPER ADMIN role' }, { status: 403 });
         }
 
@@ -61,8 +84,8 @@ export async function PATCH(request: Request, { params }: { params: { id: string
                 title,
                 firstName,
                 lastName,
-                // Only update role if allowed per constraints above
-                ...(role ? { role } : {}),
+                // Only update role if it's different and not forbidden by checks above
+                ...(role && role !== target.role ? { role } : {}),
             }
         });
 
@@ -72,15 +95,40 @@ export async function PATCH(request: Request, { params }: { params: { id: string
 
         return NextResponse.json({ message: "User updated successfully", updatedAccount }, { status: 200 });
     } catch (error) {
-        return NextResponse.error();
+        return NextResponse.json({ message: "Internal Server Error" }, { status: 500 });
     }
 }
 
 // DELETE /api/accounts/[id]
 // delete account by id
 export async function DELETE(request: Request, { params }: { params: { id: string } }) {
+    const { session, error } = await requireAuth(["SUPER_ADMIN", "ADMIN"]);
+    if (error) return error;
+
+    const viewerRole = (session?.user as any).role;
+
     try {
         const { id } = params;
+
+        // Fetch target user 
+        const target = await db.user.findUnique({
+            where: { id: Number(id) },
+            select: { role: true },
+        });
+
+        if (!target) {
+            return NextResponse.json({ message: "User not found" }, { status: 404 });
+        }
+
+        // Protection for SUPER_ADMIN
+        if (target.role === 'SUPER_ADMIN') {
+            return NextResponse.json({ message: 'Cannot delete SUPER ADMIN account' }, { status: 403 });
+        }
+
+        // ADMIN can only delete TEACHER
+        if (viewerRole === 'ADMIN' && target.role !== 'TEACHER') {
+            return NextResponse.json({ message: 'ADMIN can only delete TEACHER accounts' }, { status: 403 });
+        }
 
         //remove related teach records
         await db.teach.deleteMany({
@@ -92,6 +140,6 @@ export async function DELETE(request: Request, { params }: { params: { id: strin
         });
         return NextResponse.json({ message: "User deleted successfully", deletedAccount }, { status: 200 });
     } catch (error) {
-        return NextResponse.error();
+        return NextResponse.json({ message: "Internal Server Error" }, { status: 500 });
     }
 }

@@ -1,4 +1,4 @@
-import { TableRow, TableCell, Checkbox, Chip } from "@mui/material";
+import { TableRow, TableCell, Checkbox, Chip, Tooltip } from "@mui/material";
 import { TableInvitationsProps } from "@/lib/types/invitations";
 
 interface InviteRowProps {
@@ -6,6 +6,7 @@ interface InviteRowProps {
 	isSelected: boolean;
 	onSelectRow: (id: string) => void;
 	loading?: boolean;
+	viewerRole?: string;
 }
 
 const statusColor = (status: string) => {
@@ -23,9 +24,17 @@ const statusColor = (status: string) => {
 	}
 };
 
-const InviteRow = ({ invite, isSelected, onSelectRow, loading = false }: InviteRowProps) => {
+const InviteRow = ({ invite, isSelected, onSelectRow, loading = false, viewerRole }: InviteRowProps) => {
+	
+	const canManage = viewerRole === 'SUPER_ADMIN' || (viewerRole === 'ADMIN' && invite.role === 'TEACHER');
+	const disabledReason = (viewerRole === 'ADMIN' && invite.role !== 'TEACHER') 
+		? "Admin สามารถจัดการได้เฉพาะคำเชิญบทบาท Teacher เท่านั้น" 
+		: "";
+
 	const handleSelectRow = (event: React.ChangeEvent<HTMLInputElement>) => {
-		onSelectRow(invite.id);
+		if (canManage) {
+			onSelectRow(invite.id);
+		}
 	};
 
 	const formatDate = (dateString: string) => {
@@ -40,12 +49,16 @@ const InviteRow = ({ invite, isSelected, onSelectRow, loading = false }: InviteR
 	return (
 		<TableRow hover role="checkbox" aria-checked={isSelected} selected={isSelected}>
 			<TableCell padding="checkbox">
-				<Checkbox
-					checked={isSelected}
-					onChange={handleSelectRow}
-					disabled={loading}
-					inputProps={{ "aria-labelledby": `invite-${invite.id}` }}
-				/>
+				<Tooltip title={disabledReason} arrow placement="top">
+					<span>
+						<Checkbox
+							checked={isSelected}
+							onChange={handleSelectRow}
+							disabled={loading || !canManage}
+							inputProps={{ "aria-labelledby": `invite-${invite.id}` }}
+						/>
+					</span>
+				</Tooltip>
 			</TableCell>
 			<TableCell>
 				<Chip label={invite.status} color={statusColor(invite.status)} size="small" />
@@ -62,4 +75,3 @@ const InviteRow = ({ invite, isSelected, onSelectRow, loading = false }: InviteR
 };
 
 export default InviteRow;
-

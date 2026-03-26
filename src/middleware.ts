@@ -49,17 +49,15 @@ export async function middleware(req: any) {
     // }
   }
 
-  // Account management page access control
-  if (
-    pathname.startsWith("/admin/accounts") &&
-    user &&
-    user.role == "TEACHER"
-  ) {
-    return NextResponse.redirect(new URL("/admin", req.url));
-  }
-
-  // other pages access control
-  if (pathname.startsWith("/admin/other") && user && user.role == "TEACHER") {
-    return NextResponse.redirect(new URL("/admin", req.url));
+  // Admin pages access control (Accounts and System Settings)
+  if (user && user.role === "TEACHER") {
+    if (
+      pathname.startsWith("/admin/accounts") ||
+      pathname.startsWith("/admin/other") ||
+      pathname.startsWith("/admin/courses/late-fee") ||
+      pathname.startsWith("/admin/reported-chat")
+    ) {
+      return NextResponse.redirect(new URL("/admin", req.url));
+    }
   }
 }

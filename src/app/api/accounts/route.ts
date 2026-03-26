@@ -1,9 +1,14 @@
 import { db } from "@/lib/database";
 import { NextResponse } from "next/server";
 
+import { requireAuth } from "@/lib/utils/auth";
+
 // GET /api/accounts
 // get all accounts
 export async function GET() {
+  const { error } = await requireAuth(["SUPER_ADMIN", "ADMIN"]);
+  if (error) return error;
+
   try {
     const accounts = await db.user.findMany({
       select: {
@@ -28,6 +33,10 @@ export async function GET() {
 // DELETE /api/accounts
 // delete multiple accounts by ids (except SUPER_ADMIN)
 export async function DELETE(request: Request) {
+  const { session, error } = await requireAuth(["SUPER_ADMIN", "ADMIN"]);
+  if (error) return error;
+
+  const viewerRole = (session?.user as any).role;
   try {
     const body = await request.json();
     const { ids } = body;
@@ -42,23 +51,35 @@ export async function DELETE(request: Request) {
     // Convert string ids to numbers
     const numericIds = ids.map((id) => Number(id));
 
-    // Check for SUPER_ADMIN accounts in the selection
-    const superAdminAccounts = await db.user.findMany({
+    // Check for SUPER_ADMIN or ADMIN accounts in the selection depending on viewer role
+    const sensitiveAccounts = await db.user.findMany({
       where: {
         id: { in: numericIds },
-        role: "SUPER_ADMIN",
+        OR: viewerRole === "ADMIN" 
+          ? [ { role: "SUPER_ADMIN" }, { role: "ADMIN" } ]
+          : [ { role: "SUPER_ADMIN" } ]
       },
-      select: { id: true, firstName: true, lastName: true },
+      select: { id: true, firstName: true, lastName: true, role: true },
     });
 
-    if (superAdminAccounts.length > 0) {
-      return NextResponse.json(
-        {
-          message: "Cannot delete SUPER_ADMIN accounts",
-          superAdminAccounts,
-        },
-        { status: 403 },
-      );
+    if (sensitiveAccounts.length > 0) {
+      if (viewerRole === "ADMIN") {
+        return NextResponse.json(
+          {
+            message: "ADMIN can only delete TEACHER accounts",
+            sensitiveAccounts,
+          },
+          { status: 403 },
+        );
+      } else {
+        return NextResponse.json(
+          {
+            message: "Cannot delete SUPER_ADMIN accounts",
+            superAdminAccounts: sensitiveAccounts,
+          },
+          { status: 403 },
+        );
+      }
     }
 
     //delete relate teach
@@ -75,7 +96,7 @@ export async function DELETE(request: Request) {
     const deletedAccounts = await db.user.deleteMany({
       where: {
         id: { in: numericIds },
-        role: { not: "SUPER_ADMIN" }, // Extra safety check
+        role: viewerRole === "ADMIN" ? "TEACHER" : { not: "SUPER_ADMIN" }, // Extra safety check
       },
     });
 

@@ -1,10 +1,13 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/database";
 import SendMail from "@/lib/services/NodeMailer";
+import { requireAuth } from "@/lib/utils/auth";
 
 //GET /api/invite
 // get all invites
 export async function GET() {
+  const { error } = await requireAuth(["SUPER_ADMIN", "ADMIN"]);
+  if (error) return error;
   try {
     // Expire PENDING invites older than 7 days
     const cutoff = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
@@ -70,6 +73,9 @@ export async function GET() {
 // DELETE /api/invite
 // delete multiple invites by ids
 export async function DELETE(request: Request) {
+  const { error } = await requireAuth(["SUPER_ADMIN", "ADMIN"]);
+  if (error) return error;
+
   try {
     const body = await request.json();
     const { ids } = body as { ids?: string[] };
@@ -113,6 +119,9 @@ export async function DELETE(request: Request) {
 // PUT /api/invite
 // resend invitation emails for selected invites
 export async function PUT(request: Request) {
+  const { error } = await requireAuth(["SUPER_ADMIN", "ADMIN"]);
+  if (error) return error;
+
   try {
     const body = await request.json();
     const { ids } = body as { ids?: string[] };
@@ -269,9 +278,31 @@ export async function PUT(request: Request) {
 // POST /api/invite
 // create a new invite
 export async function POST(req: Request) {
+  const { session, error } = await requireAuth(["SUPER_ADMIN", "ADMIN"]);
+  if (error) return error;
+
+  const viewerRole = (session?.user as any).role;
+
   try {
     const body = await req.json();
     const { email, title, firstName, lastName, role, inviterID } = body;
+
+    // Role-based restriction: ADMIN can only invite TEACHER
+    if (viewerRole === "ADMIN" && role && role !== "TEACHER") {
+      return NextResponse.json(
+        { message: "ADMIN can only invite TEACHERs" },
+        { status: 403 },
+      );
+    }
+    
+    // Safety: If role is not provided, default to TEACHER for ADMIN
+    const finalRole = role || "TEACHER";
+    if (viewerRole === "ADMIN" && finalRole !== "TEACHER") {
+       return NextResponse.json(
+        { message: "ADMIN can only invite TEACHERs" },
+        { status: 403 },
+      );
+    }
 
     // Basic validation: email and inviterID are required; others optional
     if (!email || typeof email !== "string") {

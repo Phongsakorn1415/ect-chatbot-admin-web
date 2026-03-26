@@ -1,5 +1,6 @@
 import { db } from "@/lib/database";
 import { NextResponse } from "next/server";
+import { requireAuth } from "@/lib/utils/auth";
 
 // GET /api/accounts/[id]/contact
 // Fetch contact information for a specific account
@@ -7,6 +8,9 @@ export async function GET(
   request: Request,
   { params }: { params: { id: string } },
 ) {
+  const { error } = await requireAuth(["SUPER_ADMIN", "ADMIN"]);
+  if (error) return error;
+
   const accountId = await params.id;
   const contactInfo = await db.contact.findMany({
     select: {
@@ -30,6 +34,9 @@ export async function POST(
   request: Request,
   { params }: { params: { id: string } },
 ) {
+  const { error } = await requireAuth(["SUPER_ADMIN", "ADMIN"]);
+  if (error) return error;
+
   const accountId = await params.id;
   const { detail, type_id } = await request.json();
 

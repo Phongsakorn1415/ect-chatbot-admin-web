@@ -1,6 +1,7 @@
 import { db } from "@/lib/database";
 import { NextResponse } from "next/server";
 import { FeeUnit } from "@prisma/client";
+import { requireAuth } from "@/lib/utils/auth";
 
 // GET /api/course/late-fee
 // Return the single late registration fee record. If not found, return default.
@@ -23,13 +24,16 @@ export async function GET() {
     return NextResponse.json({ data: fee }, { status: 200 });
   } catch (error) {
     console.error("Error fetching late fee:", error);
-    return NextResponse.error();
+    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }
 
 // POST /api/course/late-fee
 // Update or create the single late registration fee record.
 export async function POST(request: Request) {
+  const { error } = await requireAuth(["SUPER_ADMIN", "ADMIN"]);
+  if (error) return error;
+
   try {
     const body = await request.json().catch(() => ({}));
     const { rate, unit, max_amount } = body ?? {};
@@ -62,6 +66,6 @@ export async function POST(request: Request) {
     return NextResponse.json({ data: saved }, { status: 200 });
   } catch (error) {
     console.error("Error saving late fee:", error);
-    return NextResponse.error();
+    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }

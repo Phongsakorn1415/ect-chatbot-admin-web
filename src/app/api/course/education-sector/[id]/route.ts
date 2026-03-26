@@ -1,11 +1,15 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/database";
+import { requireAuth } from "@/lib/utils/auth";
 
 // DELETE /api/course/education-sector/[id]
 export async function DELETE(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const { error } = await requireAuth(["SUPER_ADMIN", "ADMIN"]);
+  if (error) return error;
+
   try {
     const { id } = await params;
     const idNum = Number(id);
@@ -42,6 +46,6 @@ export async function DELETE(
     return NextResponse.json({ data: deletedSector }, { status: 200 });
   } catch (error) {
     console.error("Error deleting education sector:", error);
-    return NextResponse.error();
+    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }

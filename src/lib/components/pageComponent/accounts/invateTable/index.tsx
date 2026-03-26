@@ -5,6 +5,7 @@ import { TableInvitationsProps } from "@/lib/types/invitations";
 import { InviteSearchFilters } from "@/lib/types/invite-search";
 import InviteRow from "./AccountRow";
 import InviteSearchControls from "./SearchControls";
+import { useSession } from "next-auth/react";
 
 interface Props {
     data: TableInvitationsProps[];
@@ -12,6 +13,9 @@ interface Props {
 }
 
 const InviteTable = ({ data, onRefresh }: Props) => {
+    const { data: session } = useSession();
+    const viewerRole = (session?.user as any)?.role;
+
     const [loading, setLoading] = useState(false);
     const [selectedItems, setSelectedItems] = useState<string[]>([]);
     const [page, setPage] = useState(0);
@@ -80,33 +84,40 @@ const InviteTable = ({ data, onRefresh }: Props) => {
         return filteredData.slice(startIndex, startIndex + rowsPerPage);
     }, [filteredData, page, rowsPerPage]);
 
-    const rowCountOnPage = paginatedData.length;
+    // Role-based selectable invites
+    const selectableInvites = useMemo(() => {
+        return paginatedData.filter(invite => {
+            if (viewerRole === 'SUPER_ADMIN') return true;
+            if (viewerRole === 'ADMIN') return invite.role === 'TEACHER';
+            return false;
+        });
+    }, [paginatedData, viewerRole]);
+
+    const rowCountOnPage = selectableInvites.length;
     const allSelectedOnPage =
-        selectedItems.length > 0 &&
-        selectedItems.length === rowCountOnPage &&
-        paginatedData.every((item) => selectedItems.includes(item.id));
+        rowCountOnPage > 0 &&
+        selectableInvites.every((item) => selectedItems.includes(item.id));
     const indeterminateOnPage =
-        selectedItems.length > 0 &&
-        selectedItems.length < rowCountOnPage &&
-        paginatedData.some((item) => selectedItems.includes(item.id));
+        selectedItems.length > 0 && !allSelectedOnPage &&
+        selectableInvites.some((item) => selectedItems.includes(item.id));
 
     const handleSelectAllOnPage = useCallback(
         (event: React.ChangeEvent<HTMLInputElement>) => {
             if (event.target.checked) {
-                const allIds = paginatedData.map((item) => item.id);
+                const allSelectableIds = selectableInvites.map((item) => item.id);
                 setSelectedItems((prev) => {
                     const newSelection = [...prev];
-                    allIds.forEach((id) => {
+                    allSelectableIds.forEach((id) => {
                         if (!newSelection.includes(id)) newSelection.push(id);
                     });
                     return newSelection;
                 });
             } else {
-                const currentPageIds = paginatedData.map((item) => item.id);
+                const currentPageIds = selectableInvites.map((item) => item.id);
                 setSelectedItems((prev) => prev.filter((id) => !currentPageIds.includes(id)));
             }
         },
-        [paginatedData]
+        [selectableInvites]
     );
 
     const handleSelectRow = useCallback((id: string) => {
@@ -165,7 +176,6 @@ const InviteTable = ({ data, onRefresh }: Props) => {
             if (response.ok) {
                 alert(`ลบคำเชิญสำเร็จ ${result.deletedCount} รายการ`);
                 setSelectedItems([]);
-                // refresh data without reloading
                 if (onRefresh) await onRefresh();
             } else {
                 alert(`เกิดข้อผิดพลาด: ${result.message || 'ลบไม่สำเร็จ'}`);
@@ -201,7 +211,6 @@ const InviteTable = ({ data, onRefresh }: Props) => {
                 if (typeof result.skipped === 'number' && result.skipped > 0) parts.push(`ข้าม ${result.skipped}`);
                 alert(`ดำเนินการสำเร็จ: ${parts.join(', ')}`);
                 setSelectedItems([]);
-                // refresh data without reloading
                 if (onRefresh) await onRefresh();
             } else {
                 alert(`เกิดข้อผิดพลาด: ${result.message || 'ส่งอีเมลไม่สำเร็จ'}`);
@@ -216,7 +225,6 @@ const InviteTable = ({ data, onRefresh }: Props) => {
 
     return (
         <>
-            {/* Search Controls */}
             <InviteSearchControls
                 filters={searchFilters}
                 onFiltersChange={setSearchFilters}
@@ -224,7 +232,6 @@ const InviteTable = ({ data, onRefresh }: Props) => {
                 onClearSearch={handleClearSearch}
             />
 
-            {/* Action summary */}
             <Box
                 sx={{
                     display: "flex",
@@ -291,6 +298,7 @@ const InviteTable = ({ data, onRefresh }: Props) => {
                                 isSelected={selectedItems.includes(invite.id)}
                                 onSelectRow={handleSelectRow}
                                 loading={loading}
+                                viewerRole={viewerRole}
                             />
                         ))}
                         {paginatedData.length === 0 && (
@@ -335,4 +343,3 @@ const InviteTable = ({ data, onRefresh }: Props) => {
 };
 
 export default InviteTable;
-
