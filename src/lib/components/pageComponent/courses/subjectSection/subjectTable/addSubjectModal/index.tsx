@@ -311,7 +311,9 @@ const AddSubjectModal: React.FC<Props> = ({ open, onClose, context, sectors = []
 
 	const checkNextMissing = (data: ParsedSubject[], currentSectors: educationSector[]) => {
 		const missing = data.find(p => {
-			if (!p.year || p.term === undefined) return false;
+			if (p.year === undefined || p.term === undefined) return false;
+			// If year == 0, it means elective or unknown year, so skip "missing sector" check
+			if (p.year === 0) return false;
 			return !currentSectors.some(s => s.year === p.year && s.semester === p.term);
 		});
 
@@ -324,11 +326,15 @@ const AddSubjectModal: React.FC<Props> = ({ open, onClose, context, sectors = []
 			// Auto-map destinations
 			const initialDest: Record<number, string> = {};
 			data.forEach((p, idx) => {
-				const match = currentSectors.find(s => s.year === p.year && s.semester === p.term);
-				if (match) {
-					initialDest[idx] = `sector:${match.id}`;
-				} else {
+				if (p.year === 0) {
 					initialDest[idx] = "elective";
+				} else {
+					const match = currentSectors.find(s => s.year === p.year && s.semester === p.term);
+					if (match) {
+						initialDest[idx] = `sector:${match.id}`;
+					} else {
+						initialDest[idx] = "elective";
+					}
 				}
 			});
 			setDestinations(initialDest);
@@ -747,8 +753,8 @@ const AddSubjectModal: React.FC<Props> = ({ open, onClose, context, sectors = []
 																</Select>
 															</FormControl>
 														</TableCell>
-														<TableCell>{p.year}</TableCell>
-														<TableCell>{p.term}</TableCell>
+														<TableCell>{p.year === 0 ? "-" : p.year}</TableCell>
+														<TableCell>{p.term === 0 ? p.year === 0 ? "-" : "summer" : p.term}</TableCell>
 														<TableCell>
 															<FormControl variant="standard" size="small" fullWidth>
 																<Select
@@ -827,7 +833,7 @@ const AddSubjectModal: React.FC<Props> = ({ open, onClose, context, sectors = []
 				<DialogTitle>ไม่พบข้อมูลปีการศึกษา</DialogTitle>
 				<DialogContent>
 					<Typography>
-						พบวิชาของปีการศึกษา {missingSectorAlert?.year} ภาคเรียนที่ {missingSectorAlert?.term} ซึ่งยังไม่มีในระบบ
+						พบวิชาของปีการศึกษา {missingSectorAlert?.year} ภาค{missingSectorAlert?.term == 0 ? "ฤดูร้อน" : `เรียนที่ ${missingSectorAlert?.term}`} ซึ่งยังไม่มีในระบบ
 					</Typography>
 					<Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
 						กรุณาเลือกการดำเนินการ:
