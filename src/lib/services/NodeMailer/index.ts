@@ -11,16 +11,11 @@ const transporter = nodemailer.createTransport({
   },
 });
 
-const SendMail = async ({
-  from,
-  to,
-  subject,
-  text,
-  html,
-}: SendMailProps) => {
-  const fromName = process.env.EMAIL_USER_DISPLAY || "ECT Chatbot Admin";
-  const fromEmail = process.env.EMAIL_USER;
-  const finalFrom = from || `${fromName} <${fromEmail}>`;
+const SendMail = async ({ from, to, subject, text, html }: SendMailProps) => {
+  const fromName =
+    process.env.EMAIL_USER_DISPLAY ||
+    `"ECT Chatbot Admin" <${process.env.EMAIL_USER}>`;
+  const finalFrom = from || fromName;
 
   return new Promise((resolve, reject) => {
     try {
@@ -31,7 +26,7 @@ const SendMail = async ({
         text?: string;
         html?: string;
       } = {
-        from: finalFrom,
+        from: finalFrom as string,
         to: to,
         subject: subject,
         ...(text ? { text } : {}),
