@@ -245,11 +245,10 @@ export async function PUT(request: Request) {
   </body>
   </html>`;
 
-        // Fire-and-forget
-        SendMail({ to: inv.email, subject, text, html });
+        await SendMail({ to: inv.email, subject, text, html });
         resent += 1;
       } catch (mailErr) {
-        console.log("Failed to queue resend invitation email:", mailErr);
+        console.log("Failed to send invitation email:", mailErr);
       }
     }
 
@@ -369,11 +368,8 @@ export async function POST(req: Request) {
 
     await db.invite.create({ data: inviteData as any });
 
-    // Send invitation email (best-effort)
+    // Send invitation email
     try {
-      const fromAddress = (process.env.EMAIL_FROM ||
-        process.env.EMAIL_USER ||
-        "no-reply@example.com") as string;
       const fullName = [title, firstName, lastName].filter(Boolean).join(" ");
       const subject =
         "คุณได้รับเชิญให้เข้าร่วมใช้งานเว็บจัดการข้อมูล ECT Chatbot";
@@ -447,16 +443,14 @@ export async function POST(req: Request) {
   </body>
   </html>`;
 
-      // Fire-and-forget; any error will be logged inside SendMail
-      SendMail({
-        from: fromAddress,
+      await SendMail({
         to: email,
         subject,
         text,
         html,
       });
     } catch (mailErr) {
-      console.log("Failed to queue invitation email:", mailErr);
+      console.log("Failed to send invitation email:", mailErr);
     }
 
     return NextResponse.json(

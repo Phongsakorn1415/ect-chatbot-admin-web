@@ -12,36 +12,45 @@ const transporter = nodemailer.createTransport({
 });
 
 const SendMail = async ({
-  from = process.env.EMAIL_USER_DISPLAY || (process.env.EMAIL_USER as string),
+  from,
   to,
   subject,
   text,
   html,
 }: SendMailProps) => {
-  try {
-    const mailOptions: {
-      from: string;
-      to: string;
-      subject: string;
-      text?: string;
-      html?: string;
-    } = {
-      from: from,
-      to: to,
-      subject: subject,
-      ...(text ? { text } : {}),
-      ...(html ? { html } : {}),
-    };
+  const fromName = process.env.EMAIL_USER_DISPLAY || "ECT Chatbot Admin";
+  const fromEmail = process.env.EMAIL_USER;
+  const finalFrom = from || `${fromName} <${fromEmail}>`;
 
-    transporter.sendMail(mailOptions, (error, info) => {
-      if (error) {
-        return console.log(error);
-      }
-      console.log("Sending Email success\n send email to: " + info.response);
-    });
-  } catch (err) {
-    console.log("Error sending email:", err);
-  }
+  return new Promise((resolve, reject) => {
+    try {
+      const mailOptions: {
+        from: string;
+        to: string;
+        subject: string;
+        text?: string;
+        html?: string;
+      } = {
+        from: finalFrom,
+        to: to,
+        subject: subject,
+        ...(text ? { text } : {}),
+        ...(html ? { html } : {}),
+      };
+
+      transporter.sendMail(mailOptions, (error, info) => {
+        if (error) {
+          console.log("Error sending email:", error);
+          return reject(error);
+        }
+        console.log("Sending Email success\n send email to: " + info.response);
+        resolve(info);
+      });
+    } catch (err) {
+      console.log("Error in SendMail wrapper:", err);
+      reject(err);
+    }
+  });
 };
 
 export default SendMail;

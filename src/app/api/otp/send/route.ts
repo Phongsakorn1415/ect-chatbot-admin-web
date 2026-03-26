@@ -122,7 +122,7 @@ export async function POST(req: Request) {
   </body>
 </html>`;
 
-    SendMail({ to: targetEmail, subject, text, html });
+    await SendMail({ to: targetEmail, subject, text, html });
 
     return NextResponse.json({ message: "ส่ง OTP ไปยังอีเมลเรียบร้อยแล้ว หากไม่ได้รับ ให้ตรวจสอบในกล่อง Spam" }, { status: 200 });
   } catch (error) {
