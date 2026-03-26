@@ -4,11 +4,11 @@ import { requireAuth } from "@/lib/utils/auth";
 
 //GET /api/contact-type/[id]
 //Fetch a specific contact type by ID
-export async function GET(req: Request, { params }: { params: { id: string } }) {
+export async function GET(req: Request, { params }: { params: Promise<{ id: string }> }) {
     const { error } = await requireAuth(["SUPER_ADMIN", "ADMIN"]);
     if (error) return error;
 
-    const { id } = params;
+    const { id } = await params;
 
     try {
         const contactType = await db.contact_type.findUnique({
@@ -28,11 +28,11 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
 
 //PATCH /api/contact-type/[id]
 //Update a contact type
-export async function PATCH(req: Request, { params }: { params: { id: string } }) {
+export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
     const { error } = await requireAuth(["SUPER_ADMIN", "ADMIN"]);
     if (error) return error;
 
-    const { id } = params;
+    const { id } = await params;
     const { type } = await req.json();
 
     try {
@@ -50,11 +50,11 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
 
 //DELETE /api/contact-type/[id]
 //Delete a contact type. Use ?force=true to also delete all associated contacts.
-export async function DELETE(req: Request, { params }: { params: { id: string } }) {
+export async function DELETE(req: Request, { params }: { params: Promise<{ id: string }> }) {
     const { error } = await requireAuth(["SUPER_ADMIN", "ADMIN"]);
     if (error) return error;
 
-    const { id } = params;
+    const { id } = await params;
     const url = new URL(req.url);
     const force = url.searchParams.get('force') === 'true';
 

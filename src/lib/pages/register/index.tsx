@@ -29,7 +29,7 @@ const RegisterPage = () => {
         return (
             !!token &&
             !inviteExpired &&
-            password.length >= 8 &&
+            /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/.test(password) &&
             password === confirmPassword &&
             !submitting
         );
@@ -98,8 +98,9 @@ const RegisterPage = () => {
             setError("ไม่พบโทเคนคำเชิญ");
             return;
         }
-        if (password.length < 8) {
-            setError("รหัสผ่านต้องมีอย่างน้อย 8 ตัวอักษร");
+        const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/;
+        if (!passwordRegex.test(password)) {
+            setError("รหัสผ่านต้องมีอย่างน้อย 8 ตัวอักษร ประกอบด้วยตัวอักษรพิมพ์ใหญ่ พิมพ์เล็ก และตัวเลข");
             return;
         }
         if (password !== confirmPassword) {
@@ -210,7 +211,7 @@ const RegisterPage = () => {
                                 type="password"
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
-                                helperText="อย่างน้อย 8 ตัวอักษร"
+                                helperText="อย่างน้อย 8 ตัวอักษร (ประกอบด้วยตัวอักษรพิมพ์ใหญ่ พิมพ์เล็ก และตัวเลข)"
                                 fullWidth
                                 required
                             />

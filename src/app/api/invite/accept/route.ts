@@ -35,6 +35,7 @@ export async function GET(request: Request) {
         lastName: invite.lastName || null,
         status: invite.status,
         expired: isExpired,
+        role: invite.role,
       },
     });
   } catch (error) {
@@ -136,6 +137,7 @@ export async function POST(request: Request) {
     return NextResponse.json({
       message: "Invite accepted",
       user_id: newUser.id,
+      role: newUser.role,
     });
   } catch (error) {
     return NextResponse.json(

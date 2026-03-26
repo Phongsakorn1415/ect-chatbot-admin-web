@@ -121,7 +121,11 @@ const LoginModal: React.FC<LoginModalProps> = ({ open, onClose }) => {
   const handleResetPassword = async () => {
     setResetError("");
     if (!resetNewPassword) { setResetError("กรุณากรอกรหัสผ่านใหม่"); return; }
-    if (resetNewPassword.length < 6) { setResetError("รหัสผ่านใหม่ต้องมีอย่างน้อย 6 ตัวอักษร"); return; }
+    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/;
+    if (!passwordRegex.test(resetNewPassword)) {
+      setResetError("รหัสผ่านต้องมีอย่างน้อย 8 ตัวอักษร ประกอบด้วยตัวอักษรพิมพ์ใหญ่ พิมพ์เล็ก และตัวเลข");
+      return;
+    }
     if (resetNewPassword !== resetConfirmPassword) { setResetError("รหัสผ่านไม่ตรงกัน"); return; }
     setResetLoading(true);
     try {
@@ -302,7 +306,7 @@ const LoginModal: React.FC<LoginModalProps> = ({ open, onClose }) => {
             <TextField
               label="รหัสผ่านใหม่" type={showResetNewPassword ? 'text' : 'password'}
               value={resetNewPassword} onChange={(e) => setResetNewPassword(e.target.value)}
-              fullWidth required autoComplete="new-password" helperText="อย่างน้อย 6 ตัวอักษร"
+              fullWidth required autoComplete="new-password" helperText="อย่างน้อย 8 ตัวอักษร (ประกอบด้วยตัวอักษรพิมพ์ใหญ่ พิมพ์เล็ก และตัวเลข)"
               InputProps={{
                 endAdornment: (
                   <InputAdornment position="end">

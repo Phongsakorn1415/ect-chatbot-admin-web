@@ -5,7 +5,7 @@ import { requireAuth } from "@/lib/utils/auth";
 //GET /api/contact-type
 //Fetch all contact types
 export async function GET() {
-    const { error } = await requireAuth(["SUPER_ADMIN", "ADMIN"]);
+    const { error } = await requireAuth(["SUPER_ADMIN", "ADMIN", "TEACHER"]);
     if (error) return error;
 
     const contactTypes = await db.contact_type.findMany();

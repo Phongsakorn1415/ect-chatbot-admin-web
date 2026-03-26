@@ -99,8 +99,9 @@ const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({ open, onClose
       setError('กรุณากรอกรหัสผ่านใหม่');
       return;
     }
-    if (newPassword.length < 6) {
-      setError('รหัสผ่านใหม่ต้องมีอย่างน้อย 6 ตัวอักษร');
+    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/;
+    if (!passwordRegex.test(newPassword)) {
+      setError('รหัสผ่านต้องมีอย่างน้อย 8 ตัวอักษร ประกอบด้วยตัวอักษรพิมพ์ใหญ่ พิมพ์เล็ก และตัวเลข');
       return;
     }
     if (newPassword !== confirmPassword) {
@@ -212,7 +213,7 @@ const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({ open, onClose
               fullWidth
               required
               autoComplete="new-password"
-              helperText="อย่างน้อย 6 ตัวอักษร"
+              helperText="อย่างน้อย 8 ตัวอักษร (ประกอบด้วยตัวอักษรพิมพ์ใหญ่ พิมพ์เล็ก และตัวเลข)"
               InputProps={{
                 endAdornment: (
                   <InputAdornment position="end">

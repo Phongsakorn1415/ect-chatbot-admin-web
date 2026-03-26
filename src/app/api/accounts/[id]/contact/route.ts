@@ -6,12 +6,12 @@ import { requireAuth } from "@/lib/utils/auth";
 // Fetch contact information for a specific account
 export async function GET(
   request: Request,
-  { params }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> },
 ) {
-  const { error } = await requireAuth(["SUPER_ADMIN", "ADMIN"]);
+  const { error } = await requireAuth(["SUPER_ADMIN", "ADMIN", "TEACHER"]);
   if (error) return error;
 
-  const accountId = await params.id;
+  const { id: accountId } = await params;
   const contactInfo = await db.contact.findMany({
     select: {
       id: true,
@@ -32,12 +32,33 @@ export async function GET(
 // Add new contact information for a specific account
 export async function POST(
   request: Request,
-  { params }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> },
 ) {
-  const { error } = await requireAuth(["SUPER_ADMIN", "ADMIN"]);
+  const { session, error } = await requireAuth(["SUPER_ADMIN", "ADMIN", "TEACHER"]);
   if (error) return error;
 
-  const accountId = await params.id;
+  const { id: accountId } = await params;
+  const viewer = session?.user as any;
+
+  // RBAC Checks
+  if (viewer.role === "TEACHER") {
+    if (viewer.id !== Number(accountId)) {
+      return NextResponse.json({ message: "Forbidden: TEACHER can only add contacts to their own account" }, { status: 403 });
+    }
+  } else if (viewer.role === "ADMIN") {
+    // Check if target account is TEACHER
+    const target = await db.user.findUnique({
+      where: { id: Number(accountId) },
+      select: { role: true }
+    });
+    if (!target) {
+      return NextResponse.json({ message: "User not found" }, { status: 404 });
+    }
+    if (target.role !== "TEACHER") {
+      return NextResponse.json({ message: "Forbidden: ADMIN can only add contacts to TEACHER accounts" }, { status: 403 });
+    }
+  }
+
   const { detail, type_id } = await request.json();
 
   const newContact = await db.contact.create({

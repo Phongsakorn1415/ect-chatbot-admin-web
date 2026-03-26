@@ -4,12 +4,18 @@ import { requireAuth } from "@/lib/utils/auth";
 
 // GET /api/accounts/[id]
 // get account by id
-export async function GET(request: Request, { params }: { params: { id: string } }) {
-    const { error } = await requireAuth(["SUPER_ADMIN", "ADMIN"]);
+export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
+    const { session, error } = await requireAuth(["SUPER_ADMIN", "ADMIN", "TEACHER"]);
     if (error) return error;
 
+    const { id } = await params;
+    const viewer = session?.user as any;
+
+    if (viewer.role === "TEACHER" && viewer.id !== Number(id)) {
+        return NextResponse.json({ message: "Forbidden: TEACHER can only view their own account" }, { status: 403 });
+    }
+
     try {
-        const { id } = await params;
         const account = await db.user.findUnique({
             where: { id: Number(id) },
             select: {
@@ -34,15 +40,21 @@ export async function GET(request: Request, { params }: { params: { id: string }
 
 // PATH /api/accounts/[id]
 // edit account by id
-export async function PATCH(request: Request, { params }: { params: { id: string } }) {
-    const { session, error } = await requireAuth(["SUPER_ADMIN", "ADMIN"]);
+export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
+    const { session, error } = await requireAuth(["SUPER_ADMIN", "ADMIN", "TEACHER"]);
     if (error) return error;
 
     const viewerRole = (session?.user as any).role;
     const viewerId = (session?.user as any).id;
+    const { id: targetId } = await params;
+
+    // TEACHER can only edit themselves
+    if (viewerRole === "TEACHER" && viewerId !== Number(targetId)) {
+        return NextResponse.json({ message: "Forbidden: TEACHER can only edit their own account" }, { status: 403 });
+    }
 
     try {
-        const { id } = params;
+        const { id } = await params;
         const body = await request.json();
         const { title, firstName, lastName, role, name_embedding } = body;
 
@@ -101,14 +113,14 @@ export async function PATCH(request: Request, { params }: { params: { id: string
 
 // DELETE /api/accounts/[id]
 // delete account by id
-export async function DELETE(request: Request, { params }: { params: { id: string } }) {
+export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {
     const { session, error } = await requireAuth(["SUPER_ADMIN", "ADMIN"]);
     if (error) return error;
 
     const viewerRole = (session?.user as any).role;
 
     try {
-        const { id } = params;
+        const { id } = await params;
 
         // Fetch target user 
         const target = await db.user.findUnique({

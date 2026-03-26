@@ -51,8 +51,11 @@ export async function middleware(req: any) {
 
   // Admin pages access control (Accounts and System Settings)
   if (user && user.role === "TEACHER") {
+    // Allow teachers to access their own account page
+    const isOwnAccount = pathname.startsWith("/admin/accounts/") && pathname.split("/").pop() === String(user.id);
+
     if (
-      pathname.startsWith("/admin/accounts") ||
+      (pathname.startsWith("/admin/accounts") && !isOwnAccount) ||
       pathname.startsWith("/admin/other") ||
       pathname.startsWith("/admin/courses/late-fee") ||
       pathname.startsWith("/admin/reported-chat")

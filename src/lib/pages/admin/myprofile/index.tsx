@@ -96,6 +96,7 @@ const MyProfilePage = () => {
           userRole={accountData?.role ?? session?.user?.role}
           contactData={contactData ?? []}
           accountId={accountId}
+          canEdit={true}
         />
       </Box>
     </>

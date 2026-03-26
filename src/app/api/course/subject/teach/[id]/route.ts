@@ -4,12 +4,12 @@ import { requireAuth } from "@/lib/utils/auth";
 
 //DELETE /api/course/subject/teach/[id]
 //Remove a teaching assignment by its ID
-export async function DELETE(request: NextRequest, context: { params: { id: string } }) {
+export async function DELETE(request: NextRequest, context: { params: Promise<{ id: string }> }) {
     const { error } = await requireAuth(["SUPER_ADMIN", "ADMIN"]);
     if (error) return error;
 
     try {
-        const { id } = context.params;
+        const { id } = await context.params;
         const teachIdNum = Number(id);
         if (!Number.isFinite(teachIdNum)) {
             return NextResponse.json({ error: "Invalid teach id" }, { status: 400 });
