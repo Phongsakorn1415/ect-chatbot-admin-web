@@ -16,10 +16,15 @@ import NewCourseModal from '@/lib/components/pageComponent/courses/CreateCourseM
 
 import FeeSection from '@/lib/components/pageComponent/courses/feeSection';
 import SubjectSection from '@/lib/components/pageComponent/courses/subjectSection';
+import { useSession } from 'next-auth/react';
 
 const drawerWidth = 240;
 
 const CoursesPage = () => {
+  const { data: session } = useSession();
+  const userRole = (session?.user as any)?.role;
+  const isTeacher = userRole === 'TEACHER';
+
   const { isMobile, isTablet } = getBrackPointResolution()
   const [currentCourseYearID, setCurrentCourseYearID] = React.useState<number | null>(null);
 
@@ -137,9 +142,10 @@ const CoursesPage = () => {
         isOpen={open}
         drawerWidth={drawerWidth}
         items={drawerItems}
-        showAddButton={true}
+        showAddButton={!isTeacher}
         addButtonText="เพิ่มหลักสูตรใหม่"
         onAddButtonClick={() => setOpenNewCourseModal(true)}
+        isReadOnly={isTeacher}
       />
 
       {/* Page content overlays and slides when drawer opens (mobile/tablet) */}
@@ -178,19 +184,21 @@ const CoursesPage = () => {
           {currentCourseYearID ?
             <>
               หลักสูตรปี {courseYear.find(cy => cy.id === currentCourseYearID)?.year}
-              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, ml: { xs: 0, sm: 2 } }}>
-                <Button
-                  variant="outlined"
-                  onClick={handleChangeCourse}
-                  color={courseYear.find(cy => cy.id === currentCourseYearID)?.status === 'DRAFT' ? 'success' : 'primary'}
-                  sx={{ whiteSpace: 'nowrap' }}
-                >
-                  {courseYear.find(cy => cy.id === currentCourseYearID)?.status === 'DRAFT' ? 'เผยแพร่หลักสูตร' : 'ตั้งเป็นร่าง'}
-                </Button>
-                <Button variant="outlined" color="error" onClick={handleDeleteCourse} sx={{ whiteSpace: 'nowrap' }}>
-                  ลบหลักสูตร
-                </Button>
-              </Box>
+              {!isTeacher && (
+                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, ml: { xs: 0, sm: 2 } }}>
+                  <Button
+                    variant="outlined"
+                    onClick={handleChangeCourse}
+                    color={courseYear.find(cy => cy.id === currentCourseYearID)?.status === 'DRAFT' ? 'success' : 'primary'}
+                    sx={{ whiteSpace: 'nowrap' }}
+                  >
+                    {courseYear.find(cy => cy.id === currentCourseYearID)?.status === 'DRAFT' ? 'เผยแพร่หลักสูตร' : 'ตั้งเป็นร่าง'}
+                  </Button>
+                  <Button variant="outlined" color="error" onClick={handleDeleteCourse} sx={{ whiteSpace: 'nowrap' }}>
+                    ลบหลักสูตร
+                  </Button>
+                </Box>
+              )}
             </>
             : <></>
           }
@@ -201,10 +209,12 @@ const CoursesPage = () => {
               courseYearId={currentCourseYearID}
               courseFee={courseFee}
               onUpdated={(fee) => setCourseFee(fee)}
+              isReadOnly={isTeacher}
             />
             <SubjectSection
               courseYearId={currentCourseYearID}
               courseYearYear={currentCourseYearID ? courseYear.find(cy => cy.id === currentCourseYearID)?.year ?? null : null}
+              isReadOnly={isTeacher}
             />
           </> :
           <>
@@ -215,9 +225,11 @@ const CoursesPage = () => {
                   <Typography variant='h6' sx={{ textAlign: 'center' }}>
                     ไม่พบหลักสูตร
                   </Typography>
-                  <Typography variant='h6' sx={{ textAlign: 'center' }}>
-                    กรุณา<Link color='primary' sx={{ fontWeight: 'bold', fontSize: '1.1rem', cursor: 'pointer', px: 1 }} onClick={() => setOpenNewCourseModal(true)}>สร้างหลักสูตร</Link>ใหม่
-                  </Typography>
+                  {!isTeacher && (
+                    <Typography variant='h6' sx={{ textAlign: 'center' }}>
+                      กรุณา<Link color='primary' sx={{ fontWeight: 'bold', fontSize: '1.1rem', cursor: 'pointer', px: 1 }} onClick={() => setOpenNewCourseModal(true)}>สร้างหลักสูตร</Link>ใหม่
+                    </Typography>
+                  )}
                 </Box>
               </Box>
             </Paper>

@@ -10,9 +10,12 @@ import { Backdrop, Box, CircularProgress, Typography } from '@mui/material';
 import useBreakPointResolution from '@/lib/services/BreakPointResolusion';
 
 import { ContactInfo } from '@/lib/types/contact';
+import { useSession } from 'next-auth/react';
 
 const AccountPage = () => {
     const { isMobile, isTablet, isDesktop } = useBreakPointResolution();
+    const { data: session } = useSession();
+    const viewerRole = (session?.user as any)?.role;
 
     const { id } = useParams<{ id: string }>();
     const [accountData, setAccountData] = React.useState<any>(null);
@@ -21,6 +24,20 @@ const AccountPage = () => {
     // true = loading, false = finished
     const [isAccountDataLoaded, setIsAccountDataLoaded] = React.useState(true);
     const [isContactDataLoaded, setIsContactDataLoaded] = React.useState(true);
+
+    const isSelf = React.useMemo(() => {
+        if (!session?.user?.id || !accountData?.id) return false;
+        return String(session.user.id) === String(accountData.id);
+    }, [session?.user?.id, accountData?.id]);
+
+    const canEdit = React.useMemo(() => {
+        if (viewerRole === 'SUPER_ADMIN') return true;
+        if (isSelf) return true;
+        if (viewerRole === 'ADMIN') {
+            return accountData?.role === 'TEACHER';
+        }
+        return false;
+    }, [viewerRole, accountData?.role, isSelf]);
 
     // Fetch account data based on ID
     useEffect(() => {
@@ -108,6 +125,8 @@ const AccountPage = () => {
                 <InfoCard
                     userRole={accountData?.role}
                     contactData={contactData ?? []}
+                    canEdit={canEdit}
+                    accountId={id}
                 />
             </Box>
         </>

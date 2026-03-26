@@ -11,9 +11,10 @@ type InfoCardProps = {
     userRole: string
     contactData?: ContactInfo[]
     accountId?: number | string
+    canEdit?: boolean
 }
 
-const InfoCard = ({ userRole, contactData, accountId }: InfoCardProps) => {
+const InfoCard = ({ userRole, contactData, accountId, canEdit }: InfoCardProps) => {
     const [TabValue, setTabValue] = useState(0);
 
     return (
@@ -29,11 +30,15 @@ const InfoCard = ({ userRole, contactData, accountId }: InfoCardProps) => {
                     <ContactSection
                         contactData={contactData ?? []}
                         accountId={accountId}
+                        canEdit={canEdit}
                     />
                 </CustomTabPanel>
                 {userRole === 'TEACHER' && (
                     <CustomTabPanel value={TabValue} index={1}>
-                        <TeachSection accountId={typeof accountId === 'string' ? Number(accountId) : accountId} />
+                        <TeachSection 
+                            accountId={typeof accountId === 'string' ? Number(accountId) : accountId} 
+                            canEdit={canEdit}
+                        />
                     </CustomTabPanel>
                 )}
             </Paper>

@@ -14,10 +14,22 @@ const ProfileCard = ({ accountData, isAccountDataLoaded, onSaved }: { accountDat
 
     const [iseditMode, setIsEditMode] = React.useState(false);
     const { data: session } = useSession();
+    const viewerRole = (session?.user as any)?.role;
+
     const isSelf = React.useMemo(() => {
         if (!session?.user?.id || !accountData?.id) return false;
         return String(session.user.id) === String(accountData.id);
     }, [session?.user?.id, accountData?.id]);
+
+    const canEdit = React.useMemo(() => {
+        if (viewerRole === 'SUPER_ADMIN') return true;
+        if (isSelf) return true;
+        if (viewerRole === 'ADMIN') {
+            return accountData?.role === 'TEACHER';
+        }
+        return false;
+    }, [viewerRole, accountData?.role, isSelf]);
+
     const [form, setForm] = React.useState({
         title: '',
         firstName: '',
@@ -141,15 +153,17 @@ const ProfileCard = ({ accountData, isAccountDataLoaded, onSaved }: { accountDat
                                 ข้อมูลผู้ใช้
                             </Typography>
                             <Box sx={{ display: 'flex', flexDirection: 'row', gap: 1 }}>
-                                {iseditMode ? (
-                                    <>
-                                        <Button variant="contained" color='error' disabled={saving} onClick={handleCancel}>ยกเลิก</Button>
-                                        <Button variant="contained" color='success' disabled={!isDirty || saving} onClick={handleSaveData}>
-                                            {saving ? 'กำลังบันทึก...' : 'บันทึก'}
-                                        </Button>
-                                    </>
-                                ) : (
-                                    <Button variant="contained" onClick={() => setIsEditMode(true)}>แก้ไขข้อมูล</Button>
+                                {canEdit && (
+                                    iseditMode ? (
+                                        <>
+                                            <Button variant="contained" color='error' disabled={saving} onClick={handleCancel}>ยกเลิก</Button>
+                                            <Button variant="contained" color='success' disabled={!isDirty || saving} onClick={handleSaveData}>
+                                                {saving ? 'กำลังบันทึก...' : 'บันทึก'}
+                                            </Button>
+                                        </>
+                                    ) : (
+                                        <Button variant="contained" onClick={() => setIsEditMode(true)}>แก้ไขข้อมูล</Button>
+                                    )
                                 )}
                             </Box>
                         </Box>
@@ -205,7 +219,9 @@ const ProfileCard = ({ accountData, isAccountDataLoaded, onSaved }: { accountDat
                                 <Tooltip
                                     title={accountData.role === 'SUPER_ADMIN' 
                                         ? 'ไม่สามารถเปลี่ยนบทบาทของ SUPER ADMIN ได้' 
-                                        : (isSelf ? 'ไม่สามารถเปลี่ยนบทบาทของบัญชีของตนเองได้' : '')}
+                                        : (isSelf ? 'ไม่สามารถเปลี่ยนบทบาทของบัญชีของตนเองได้' : (
+                                            viewerRole === 'ADMIN' ? 'Admin สามารถจัดการได้เฉพาะบัญชี Teacher เท่านั้น' : ''
+                                        ))}
                                     arrow
                                 >
                                     <TextField
@@ -213,10 +229,12 @@ const ProfileCard = ({ accountData, isAccountDataLoaded, onSaved }: { accountDat
                                         value={form.role}
                                         onChange={(e) => setForm((prev) => ({ ...prev, role: e.target.value }))}
                                         fullWidth
-                                        disabled={!iseditMode || accountData.role === 'SUPER_ADMIN' || isSelf}
+                                        disabled={!iseditMode || accountData.role === 'SUPER_ADMIN' || isSelf || (viewerRole === 'ADMIN' && accountData.role !== 'TEACHER')}
                                     >
                                         <MenuItem value="TEACHER">TEACHER</MenuItem>
-                                        <MenuItem value="ADMIN">ADMIN</MenuItem>
+                                        {(viewerRole === 'SUPER_ADMIN' || accountData.role === 'ADMIN') && (
+                                            <MenuItem value="ADMIN">ADMIN</MenuItem>
+                                        )}
                                         {accountData.role === 'SUPER_ADMIN' ? (
                                             <MenuItem value="SUPER_ADMIN">SUPER ADMIN</MenuItem>
                                         ) : null}

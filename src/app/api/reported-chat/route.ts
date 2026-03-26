@@ -1,8 +1,12 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/database';
 import dayjs from 'dayjs';
+import { requireAuth } from '@/lib/utils/auth';
 
 export async function GET(request: Request) {
+  const { error } = await requireAuth(["SUPER_ADMIN", "ADMIN"]);
+  if (error) return error;
+
   try {
     const { searchParams } = new URL(request.url);
     const startDateParam = searchParams.get('startDate');
@@ -53,6 +57,9 @@ export async function GET(request: Request) {
 }
 
 export async function DELETE(request: Request) {
+  const { error } = await requireAuth(["SUPER_ADMIN", "ADMIN"]);
+  if (error) return error;
+
   try {
     const { ids } = await request.json();
 

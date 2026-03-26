@@ -1,3 +1,5 @@
+"use client"
+
 import { Box, Button, Checkbox, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, TablePagination } from "@mui/material"
 import { useState, useCallback, useMemo } from "react"
 import dayjs from "dayjs"
@@ -5,8 +7,12 @@ import { TableAccountProps } from "@/lib/types/accounts"
 import { AccountSearchFilters } from "@/lib/types/account-search"
 import AccountRow from "./AccountRow"
 import AccountSearchControls from "./SearchControls"
+import { useSession } from "next-auth/react"
 
 const AccountsTable = ({ data }: { data: TableAccountProps[] }) => {
+    const { data: session } = useSession();
+    const viewerRole = (session?.user as any)?.role;
+
     const [loading, setLoading] = useState(false)
     const [selectedItems, setSelectedItems] = useState<string[]>([])
     const [page, setPage] = useState(0)
@@ -67,20 +73,28 @@ const AccountsTable = ({ data }: { data: TableAccountProps[] }) => {
     }, [filteredData, page, rowsPerPage])
 
     
-    // Filter out SUPER_ADMIN accounts for selection from current page
-    const selectableAccounts = paginatedData.filter(account => account.role !== 'SUPER_ADMIN')
+    // Filter out accounts that the current viewer cannot manage
+    const selectableAccounts = useMemo(() => {
+        return paginatedData.filter(account => {
+            if (viewerRole === 'SUPER_ADMIN') return true;
+            if (viewerRole === 'ADMIN') return account.role === 'TEACHER';
+            return false;
+        });
+    }, [paginatedData, viewerRole]);
+
     const rowCountOnPage = selectableAccounts.length
-    const allSelectedOnPage = selectedItems.length > 0 && selectedItems.length === rowCountOnPage && 
-                            selectableAccounts.every(account => selectedItems.includes(account.id))
-    const indeterminateOnPage = selectedItems.length > 0 && selectedItems.length < rowCountOnPage &&
-                              selectableAccounts.some(account => selectedItems.includes(account.id))
+    
+    // Check if ALL context-selectable items on current page are selected
+    const allSelectedOnPage = rowCountOnPage > 0 && 
+                             selectableAccounts.every(account => selectedItems.includes(account.id))
+    const indeterminateOnPage = selectedItems.length > 0 && !allSelectedOnPage &&
+                               selectableAccounts.some(account => selectedItems.includes(account.id))
 
     const handleSelectAllOnPage = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
         if (event.target.checked) {
-            // Select all selectable items on current page (excluding SUPER_ADMIN)
+            // Select all selectable items on current page based on role rules
             const allSelectableIds = selectableAccounts.map(item => item.id)
             setSelectedItems(prev => {
-                // Add current page selectable ids to existing selection
                 const newSelection = [...prev]
                 allSelectableIds.forEach(id => {
                     if (!newSelection.includes(id)) {
@@ -131,7 +145,6 @@ const AccountsTable = ({ data }: { data: TableAccountProps[] }) => {
             if (response.ok) {
                 alert(`ลบบัญชีสำเร็จ ${result.deletedCount} บัญชี`)
                 setSelectedItems([])
-                // Refresh the page or call a refresh function
                 window.location.reload()
             } else {
                 alert(`เกิดข้อผิดพลาด: ${result.message}`)
@@ -145,9 +158,8 @@ const AccountsTable = ({ data }: { data: TableAccountProps[] }) => {
     }
 
     const handleApplySearch = () => {
-        // Clear selection when applying new search
         setSelectedItems([])
-        setPage(0) // Reset to first page
+        setPage(0)
     }
 
     const handleClearSearch = () => {
@@ -161,7 +173,7 @@ const AccountsTable = ({ data }: { data: TableAccountProps[] }) => {
             role: ''
         })
         setSelectedItems([])
-        setPage(0) // Reset to first page
+        setPage(0)
     }
 
     const handleChangePage = (event: unknown, newPage: number) => {
@@ -170,12 +182,11 @@ const AccountsTable = ({ data }: { data: TableAccountProps[] }) => {
 
     const handleChangeRowsPerPage = (event: React.ChangeEvent<HTMLInputElement>) => {
         setRowsPerPage(parseInt(event.target.value, 10))
-        setPage(0) // Reset to first page when changing rows per page
+        setPage(0)
     }
 
     return (
         <>
-            {/* Search Controls */}
             <AccountSearchControls
                 filters={searchFilters}
                 onFiltersChange={setSearchFilters}
@@ -183,7 +194,6 @@ const AccountsTable = ({ data }: { data: TableAccountProps[] }) => {
                 onClearSearch={handleClearSearch}
             />
 
-            {/* Action Buttons */}
             <Box sx={{ display: "flex", flexDirection: { xs: 'column', md: 'row' }, gap: 2, justifyContent: { xs: 'flex-start', md: 'space-between' }, mb: 2 }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                     <span>แสดงผล {Math.min((page * rowsPerPage) + 1, filteredData.length)}-{Math.min((page + 1) * rowsPerPage, filteredData.length)} จาก {filteredData.length} บัญชี</span>
@@ -226,6 +236,7 @@ const AccountsTable = ({ data }: { data: TableAccountProps[] }) => {
                                 isSelected={selectedItems.includes(account.id)}
                                 onSelectRow={handleSelectRow}
                                 loading={loading}
+                                viewerRole={viewerRole}
                             />
                         ))}
                         {paginatedData.length === 0 && (
@@ -239,7 +250,6 @@ const AccountsTable = ({ data }: { data: TableAccountProps[] }) => {
                 </Table>
             </TableContainer>
 
-            {/* Pagination */}
             <TablePagination
                 rowsPerPageOptions={[5, 10, 25, 50]}
                 component="div"

@@ -1,9 +1,13 @@
 import { db } from "@/lib/database";
 import { NextResponse } from "next/server";
+import { requireAuth } from "@/lib/utils/auth";
 
 //GET /api/contact-type/[id]
 //Fetch a specific contact type by ID
 export async function GET(req: Request, { params }: { params: { id: string } }) {
+    const { error } = await requireAuth(["SUPER_ADMIN", "ADMIN"]);
+    if (error) return error;
+
     const { id } = params;
 
     try {
@@ -25,6 +29,9 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
 //PATCH /api/contact-type/[id]
 //Update a contact type
 export async function PATCH(req: Request, { params }: { params: { id: string } }) {
+    const { error } = await requireAuth(["SUPER_ADMIN", "ADMIN"]);
+    if (error) return error;
+
     const { id } = params;
     const { type } = await req.json();
 
@@ -44,6 +51,9 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
 //DELETE /api/contact-type/[id]
 //Delete a contact type. Use ?force=true to also delete all associated contacts.
 export async function DELETE(req: Request, { params }: { params: { id: string } }) {
+    const { error } = await requireAuth(["SUPER_ADMIN", "ADMIN"]);
+    if (error) return error;
+
     const { id } = params;
     const url = new URL(req.url);
     const force = url.searchParams.get('force') === 'true';

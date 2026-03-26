@@ -1,5 +1,6 @@
 import { db } from "@/lib/database";
 import { NextResponse } from "next/server";
+import { requireAuth } from "@/lib/utils/auth";
 
 // GET /api/course/course-fee/[id]
 // Return tuition fee by course year id (path param)
@@ -31,7 +32,7 @@ export async function GET(
     return NextResponse.json({ data: courseFee }, { status: 200 });
   } catch (error) {
     console.error("Error fetching course fee:", error);
-    return NextResponse.error();
+    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }
 
@@ -41,6 +42,9 @@ export async function POST(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const { error } = await requireAuth(["SUPER_ADMIN", "ADMIN"]);
+  if (error) return error;
+
   try {
     const { id } = await params;
     const idNum = Number(id);
@@ -80,6 +84,6 @@ export async function POST(
     return NextResponse.json({ data: saved }, { status: 200 });
   } catch (error) {
     console.error("Error upserting course fee:", error);
-    return NextResponse.error();
+    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }

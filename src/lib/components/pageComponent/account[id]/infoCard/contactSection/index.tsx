@@ -11,9 +11,10 @@ import { ContactInfo, ContactType } from "@/lib/types/contact"
 type ContactSectionProps = {
     contactData: ContactInfo[]
     accountId?: string | number
+    canEdit?: boolean
 }
 
-const ContactSection = ({ contactData, accountId: accountIdProp }: ContactSectionProps) => {
+const ContactSection = ({ contactData, accountId: accountIdProp, canEdit }: ContactSectionProps) => {
     const [allContactTypes, setAllContactTypes] = useState<Array<ContactType>>([]);
     const [isLoading, setIsLoading] = useState<boolean>(true);
 
@@ -151,24 +152,26 @@ const ContactSection = ({ contactData, accountId: accountIdProp }: ContactSectio
                                 <Paper variant="outlined" sx={{ p: 2 }} key={contactType.id}>
                                     <Box sx={{ display: 'flex', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
                                         <Typography variant="h6">{contactType.type_name}</Typography>
-                                        <Button
-                                            variant="outlined"
-                                            color="success"
-                                            size="small"
-                                            onClick={() => {
-                                                if (addingTypeId === contactType.id) {
-                                                    // toggle off
-                                                    setAddingTypeId(null);
-                                                    setAddDraft("");
-                                                } else {
-                                                    setAddingTypeId(contactType.id);
-                                                    setAddDraft("");
-                                                }
-                                            }}
-                                            disabled={addSaving}
-                                        >
-                                            <AddIcon />
-                                        </Button>
+                                        {canEdit && (
+                                            <Button
+                                                variant="outlined"
+                                                color="success"
+                                                size="small"
+                                                onClick={() => {
+                                                    if (addingTypeId === contactType.id) {
+                                                        // toggle off
+                                                        setAddingTypeId(null);
+                                                        setAddDraft("");
+                                                    } else {
+                                                        setAddingTypeId(contactType.id);
+                                                        setAddDraft("");
+                                                    }
+                                                }}
+                                                disabled={addSaving}
+                                            >
+                                                <AddIcon />
+                                            </Button>
+                                        )}
                                     </Box>
                                     <Box sx={{ mt: 1, display: 'flex', flexDirection: 'column', gap: 0.5 }}>
                                         {contactsOfType.length > 0 ? (
@@ -209,21 +212,25 @@ const ContactSection = ({ contactData, accountId: accountIdProp }: ContactSectio
                                                                 </>
                                                             ) : (
                                                                 <>
-                                                                    <IconButton
-                                                                        color="warning"
-                                                                        disabled={isDeleting}
-                                                                        onClick={() => handleStartEdit(ci.id, ci.value ?? "")}
-                                                                    >
-                                                                        <EditOutlinedIcon />
-                                                                    </IconButton>
-                                                                    <IconButton
-                                                                        color="error"
-                                                                        disabled={isDeleting}
-                                                                        onClick={() => handleDelete(ci.id)}
-                                                                        loading={isDeleting ? true : undefined}
-                                                                    >
-                                                                        <DeleteOutlinedIcon />
-                                                                    </IconButton>
+                                                                    {canEdit && (
+                                                                        <IconButton
+                                                                            color="warning"
+                                                                            disabled={isDeleting}
+                                                                            onClick={() => handleStartEdit(ci.id, ci.value ?? "")}
+                                                                        >
+                                                                            <EditOutlinedIcon />
+                                                                        </IconButton>
+                                                                    )}
+                                                                    {canEdit && (
+                                                                        <IconButton
+                                                                            color="error"
+                                                                            disabled={isDeleting}
+                                                                            onClick={() => handleDelete(ci.id)}
+                                                                            loading={isDeleting ? true : undefined}
+                                                                        >
+                                                                            <DeleteOutlinedIcon />
+                                                                        </IconButton>
+                                                                    )}
                                                                 </>
                                                             )}
                                                         </Box>

@@ -125,7 +125,7 @@ const ManageContactType = ({ open, onClose }: { open: boolean, onClose: () => vo
     return (
         <>
             <Dialog open={open} onClose={handleClose} maxWidth='md' fullWidth>
-                <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <DialogTitle component={'div'} sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <Typography variant='h5' sx={{ my: 1 }}>
                         จัดการประเภทข้อมูลของช่องทางการติดต่อ
                     </Typography>

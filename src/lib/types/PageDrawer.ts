@@ -17,4 +17,5 @@ export interface PageDrawerProps {
   showAddButton?: boolean;
   addButtonText?: string;
   onAddButtonClick?: () => void;
+  isReadOnly?: boolean;
 }
