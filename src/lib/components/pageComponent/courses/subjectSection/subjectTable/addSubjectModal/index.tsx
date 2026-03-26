@@ -32,6 +32,7 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import AttachFileIcon from '@mui/icons-material/AttachFile';
 import { PDFDocument } from 'pdf-lib';
 import type { educationSector } from "@/lib/types/course-year";
+import { LANGUAGES } from "@/lib/constants/languages";
 
 type AddContext =
 	| { type: "sector"; sector: educationSector }
@@ -65,7 +66,7 @@ type ParsedSubject = {
 	term?: number;
 }; // ParsedSubject
 
-const defaultManualRow = (): ManualRow => ({ code: "", name: "", credit: "", language: "", selected: true });
+const defaultManualRow = (): ManualRow => ({ code: "", name: "", credit: "", language: "thai", selected: true });
 
 const AddSubjectModal: React.FC<Props> = ({ open, onClose, context, sectors = [], courseYearId = null, courseYearYear = null, onAdded }) => {
 	const router = useRouter();
@@ -283,7 +284,7 @@ const AddSubjectModal: React.FC<Props> = ({ open, onClose, context, sectors = []
 					code: item.code,
 					name: item.name,
 					credit: item.credit,
-					language: item.language === 'th' ? 'ไทย' : item.language === 'en' ? 'อังกฤษ' : item.language,
+					language: (item.language === 'th' || item.language === 'thai') ? 'thai' : (item.language === 'en' || item.language === 'eng') ? 'eng' : 'thai',
 					selected: true,
 					year: item.year, // AI returns 'year'
 					term: item.term  // AI returns 'term'
@@ -536,12 +537,19 @@ const AddSubjectModal: React.FC<Props> = ({ open, onClose, context, sectors = []
 											sx={{ minWidth: 30 }}
 											inputProps={{ min: 0 }}
 										/>
-										<TextField
-											label="ภาษา"
-											value={r.language}
-											onChange={(e) => setRows((prev) => prev.map((x, i) => (i === idx ? { ...x, language: e.target.value } : x)))}
-											sx={{ minWidth: 50 }}
-										/>
+										<FormControl sx={{ minWidth: 100 }}>
+											<InputLabel id={`lang-label-${idx}`}>ภาษา</InputLabel>
+											<Select
+												labelId={`lang-label-${idx}`}
+												label="ภาษา"
+												value={r.language}
+												onChange={(e) => setRows((prev) => prev.map((x, i) => (i === idx ? { ...x, language: e.target.value } : x)))}
+											>
+												{LANGUAGES.map((l) => (
+													<MenuItem key={l.value} value={l.value}>{l.label}</MenuItem>
+												))}
+											</Select>
+										</FormControl>
 										<IconButton color="error" aria-label="remove" onClick={() => setRows((prev) => prev.filter((_, i) => i !== idx))}>
 											<DeleteIcon />
 										</IconButton>
@@ -728,12 +736,16 @@ const AddSubjectModal: React.FC<Props> = ({ open, onClose, context, sectors = []
 															/>
 														</TableCell>
 														<TableCell>
-															<TextField
-																variant="standard"
-																value={p.language || ""}
-																onChange={(e) => setParsed(prev => prev.map((x, i) => i === originalIdx ? { ...x, language: e.target.value } : x))}
-																sx={{ width: 50 }}
-															/>
+															<FormControl variant="standard" size="small" fullWidth>
+																<Select
+																	value={p.language || "thai"}
+																	onChange={(e) => setParsed(prev => prev.map((x, i) => i === originalIdx ? { ...x, language: e.target.value } : x))}
+																>
+																	{LANGUAGES.map((l) => (
+																		<MenuItem key={l.value} value={l.value}>{l.label}</MenuItem>
+																	))}
+																</Select>
+															</FormControl>
 														</TableCell>
 														<TableCell>{p.year}</TableCell>
 														<TableCell>{p.term}</TableCell>

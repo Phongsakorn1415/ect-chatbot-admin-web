@@ -28,6 +28,7 @@ import {
 import DeleteIcon from "@mui/icons-material/Delete";
 import { Subject } from "@/lib/types/subject";
 import { educationSector } from "@/lib/types/course-year";
+import { LANGUAGES } from "@/lib/constants/languages";
 
 type Props = {
     open: boolean;
@@ -72,7 +73,7 @@ const EditSubjectModal: React.FC<Props> = ({ open, onClose, subjects, allSubject
                     code: s.code ?? "",
                     name: s.name ?? "",
                     credit: s.credit ?? 0,
-                    language: s.language ?? "",
+                    language: s.language === "ไทย" ? "thai" : s.language === "อังกฤษ" ? "eng" : (s.language ?? "thai"),
                     education_sectorId: s.education_sectorId,
                     isRequire: s.isRequire ?? true,
                     prerequisiteId: s.prerequisiteId ?? null,
@@ -312,12 +313,18 @@ const EditSubjectModal: React.FC<Props> = ({ open, onClose, subjects, allSubject
                                             />
                                         </TableCell>
                                         <TableCell>
-                                            <TextField
-                                                value={row.language}
-                                                onChange={(e) => setRows(prev => prev.map((r, i) => i === idx ? { ...r, language: e.target.value } : r))}
-                                                size="small"
-                                                fullWidth
-                                            />
+                                            <FormControl size="small" fullWidth>
+                                                <Select
+                                                    value={row.language || "thai"}
+                                                    onChange={(e) => setRows(prev => prev.map((r, i) => i === idx ? { ...r, language: e.target.value } : r))}
+                                                >
+                                                    {LANGUAGES.map((l) => (
+                                                        <MenuItem key={l.value} value={l.value}>
+                                                            {l.label}
+                                                        </MenuItem>
+                                                    ))}
+                                                </Select>
+                                            </FormControl>
                                         </TableCell>
                                         <TableCell>
                                             <FormControl size="small" fullWidth>
