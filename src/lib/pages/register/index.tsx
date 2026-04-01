@@ -2,6 +2,8 @@
 
 import React from "react";
 import { Box, Paper, Typography, TextField, Button, Alert, Stack, CircularProgress, Backdrop, Dialog, DialogTitle, DialogContent, DialogActions } from "@mui/material";
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import CancelIcon from '@mui/icons-material/Cancel';
 import { useRouter, useSearchParams } from "next/navigation";
 
 const RegisterPage = () => {
@@ -24,6 +26,13 @@ const RegisterPage = () => {
     const [embedErrorModal, setEmbedErrorModal] = React.useState<{ open: boolean }>({ open: false });
 
     const [isTokenValid, setIsTokenValid] = React.useState(true);
+
+    const passwordChecks = [
+        { label: 'อย่างน้อย 8 ตัวอักษร', isValid: password.length >= 8 },
+        { label: 'ตัวอักษรพิมพ์เล็กอย่างน้อย 1 ตัว (a-z)', isValid: /[a-z]/.test(password) },
+        { label: 'ตัวอักษรพิมพ์ใหญ่อย่างน้อย 1 ตัว (A-Z)', isValid: /[A-Z]/.test(password) },
+        { label: 'ตัวเลขอย่างน้อย 1 ตัว (0-9)', isValid: /\d/.test(password) },
+    ];
 
     const canSubmit = React.useMemo(() => {
         return (
@@ -206,15 +215,30 @@ const RegisterPage = () => {
                                 />
                             </Stack>
 
-                            <TextField
-                                label="รหัสผ่าน"
-                                type="password"
-                                value={password}
-                                onChange={(e) => setPassword(e.target.value)}
-                                helperText="อย่างน้อย 8 ตัวอักษร (ประกอบด้วยตัวอักษรพิมพ์ใหญ่ พิมพ์เล็ก และตัวเลข)"
-                                fullWidth
-                                required
-                            />
+                            <Box>
+                                <TextField
+                                    label="รหัสผ่าน"
+                                    type="password"
+                                    value={password}
+                                    onChange={(e) => setPassword(e.target.value)}
+                                    fullWidth
+                                    required
+                                />
+                                <Box sx={{ mt: 1, ml: 1 }}>
+                                    {passwordChecks.map((check, index) => (
+                                        <Stack key={index} direction="row" alignItems="center" spacing={1} sx={{ mt: 0.5 }}>
+                                            {check.isValid ? (
+                                                <CheckCircleIcon color="success" sx={{ fontSize: 18 }} />
+                                            ) : (
+                                                <CancelIcon color="error" sx={{ fontSize: 18 }} />
+                                            )}
+                                            <Typography variant="body2" color={check.isValid ? "success.main" : "error"}>
+                                                {check.label}
+                                            </Typography>
+                                        </Stack>
+                                    ))}
+                                </Box>
+                            </Box>
                             <TextField
                                 label="ยืนยันรหัสผ่าน"
                                 type="password"
@@ -284,9 +308,9 @@ const RegisterPage = () => {
                     </Typography>
                 </DialogContent>
                 <DialogActions sx={{ p: 2, justifyContent: 'end' }}>
-                    <Button 
-                        variant="contained" 
-                        color="primary" 
+                    <Button
+                        variant="contained"
+                        color="primary"
                         onClick={() => {
                             setEmbedErrorModal({ open: false });
                             setSuccess("ลงทะเบียนสำเร็จ กำลังนำคุณไปยังหน้าเข้าสู่ระบบ…");
