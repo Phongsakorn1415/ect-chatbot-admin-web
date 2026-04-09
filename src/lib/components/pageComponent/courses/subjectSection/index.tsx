@@ -18,6 +18,7 @@ import {
     FormControl,
     FormLabel,
     Stack,
+    Skeleton,
 } from "@mui/material";
 import AddIcon from '@mui/icons-material/Add';
 import { educationSector } from "@/lib/types/course-year";
@@ -37,6 +38,7 @@ const SubjectSection: React.FC<{ courseYearId: number | null, courseYearYear?: n
     const [electiveLoading, setElectiveLoading] = React.useState<boolean>(false);
     const [courseSubjects, setCourseSubjects] = React.useState<Subject[] | null>(null);
     const [courseSubjectsLoading, setCourseSubjectsLoading] = React.useState<boolean>(false);
+    const [sectorsLoading, setSectorsLoading] = React.useState<boolean>(true);
 
     // Modal state
     const [openAdd, setOpenAdd] = React.useState(false);
@@ -70,8 +72,10 @@ const SubjectSection: React.FC<{ courseYearId: number | null, courseYearYear?: n
         // Guard: don't call API if courseYearId is not ready
         if (courseYearId == null || Number.isNaN(Number(courseYearId))) {
             setAllSemesters([]);
+            setSectorsLoading(false);
             return [];
         }
+        setSectorsLoading(true);
         try {
             const response = await fetch(`/api/course/course-year/${courseYearId}/sector`);
             const json = await response.json();
@@ -85,6 +89,8 @@ const SubjectSection: React.FC<{ courseYearId: number | null, courseYearYear?: n
             console.error("Error fetching semesters:", error);
             setAllSemesters([]);
             return [];
+        } finally {
+            setSectorsLoading(false);
         }
     }, [courseYearId]);
 
@@ -290,55 +296,85 @@ const SubjectSection: React.FC<{ courseYearId: number | null, courseYearYear?: n
             </Typography>
             {/* <Button variant="outlined" onClick={() => setOpenAdd(true)}>เพิ่มวิชา</Button> */}
             <Box sx={{ width: "100%" }}>
-                <Box sx={{ borderBottom: 1, borderColor: "divider" }}>
-                    <Tabs
-                        value={value}
-                        onChange={handleChange}
-                        aria-label="tabs วิชาที่เปิดสอน"
-                        variant="scrollable"
-                        scrollButtons="auto"
-                    // allowScrollButtonsMobile
-                    >
-                        {
-                            (Array.isArray(allSemesters) ? allSemesters : []).map((sector, index) => (
+                {sectorsLoading ? (
+                    <>
+                        <Box sx={{ borderBottom: 1, borderColor: 'divider', display: 'flex', gap: 1, pb: 1 }}>
+                            <Skeleton variant="rounded" width={130} height={36} />
+                            <Skeleton variant="rounded" width={130} height={36} />
+                            <Skeleton variant="rounded" width={130} height={36} />
+                        </Box>
+                        <Box sx={{ mt: 2, display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+                            <Skeleton variant="rounded" height={44} />
+                            <Skeleton variant="rounded" height={44} />
+                            <Skeleton variant="rounded" height={44} />
+                        </Box>
+                    </>
+                ) : (
+                    <>
+                        <Box sx={{ borderBottom: 1, borderColor: "divider" }}>
+                            <Tabs
+                                value={value}
+                                onChange={handleChange}
+                                aria-label="tabs วิชาที่เปิดสอน"
+                                variant="scrollable"
+                                scrollButtons="auto"
+                            >
+                                {(Array.isArray(allSemesters) ? allSemesters : []).map((sector, index) => (
+                                    <Tab
+                                        key={sector.id}
+                                        label={`ปี ${sector.year} ${sector.semester !== 0 ? `ภาคการเรียนที่ ${sector.semester}` : "ภาคฤดูร้อน"}`}
+                                        {...a11yProps(index)}
+                                    />
+                                ))}
                                 <Tab
-                                    key={sector.id}
-                                    label={`ปี ${sector.year} ${sector.semester !== 0 ? `ภาคการเรียนที่ ${sector.semester}` : "ภาคฤดูร้อน"}`}
-                                    {...a11yProps(index)}
+                                    label={'วิชาเลือก'}
+                                    aria-label="วิชาเลือก"
+                                    {...a11yProps(allSemesters.length)}
                                 />
-                            ))
-                        }
-                        <Tab
-                            label={'วิชาเลือก'}
-                            aria-label="วิชาเลือก"
-                            {...a11yProps(allSemesters.length)}
-                        />
-                        {!isReadOnly && (
-                            <Tab
-                                icon={<AddIcon />}
-                                sx={{ color: 'black' }}
-                                aria-label="เพิ่มภาคการศึกษา"
-                                {...a11yProps(allSemesters.length + 1)}
-                            />
-                        )}
-                    </Tabs>
-                </Box>
-                {
-                    (Array.isArray(allSemesters) ? allSemesters : []).map((sector, index) => (
-                        <CustomTabPanel key={sector.id} value={value} index={index}>
-                            <Typography sx={{ mb: 2, fontSize: "125%", alignContent: "center" }}>
-                                รายการวิชา: ปี {sector.year} {sector.semester !== 0 ? `ภาคการเรียนที่ ${sector.semester}` : "ภาคฤดูร้อน"}
                                 {!isReadOnly && (
-                                    <Button variant="outlined" color="error" onClick={() => handleDelete(sector.id)} sx={{ mb: 2, ml: 2 }}>ลบภาคการศึกษานี้</Button>
+                                    <Tab
+                                        icon={<AddIcon />}
+                                        sx={{ color: 'black' }}
+                                        aria-label="เพิ่มภาคการศึกษา"
+                                        {...a11yProps(allSemesters.length + 1)}
+                                    />
                                 )}
+                            </Tabs>
+                        </Box>
+                        {(Array.isArray(allSemesters) ? allSemesters : []).map((sector, index) => (
+                            <CustomTabPanel key={sector.id} value={value} index={index}>
+                                <Typography sx={{ mb: 2, fontSize: "125%", alignContent: "center" }}>
+                                    รายการวิชา: ปี {sector.year} {sector.semester !== 0 ? `ภาคการเรียนที่ ${sector.semester}` : "ภาคฤดูร้อน"}
+                                    {!isReadOnly && (
+                                        <Button variant="outlined" color="error" onClick={() => handleDelete(sector.id)} sx={{ mb: 2, ml: 2 }}>ลบภาคการศึกษานี้</Button>
+                                    )}
+                                </Typography>
+                                <Box sx={{ width: '100%', overflow: 'hidden' }}>
+                                    <SubjectTable
+                                        subjects={subjectsMap[sector.id] ?? null}
+                                        allSubjects={courseSubjects ?? []}
+                                        loading={subjectsLoading[sector.id] ?? false}
+                                        context={{ type: 'sector', sector }}
+                                        sectors={allSemesters}
+                                        courseYearId={courseYearId ?? null}
+                                        courseYearYear={courseYearYear}
+                                        onAdded={async () => { await fetchCourseYearSubjects(); }}
+                                        isReadOnly={isReadOnly}
+                                    />
+                                </Box>
+                            </CustomTabPanel>
+                        ))}
+                        {/* Elective subjects tab panel */}
+                        <CustomTabPanel key="elective" value={value} index={(Array.isArray(allSemesters) ? allSemesters : []).length}>
+                            <Typography sx={{ mb: 2, fontSize: "125%", alignContent: "center" }}>
+                                รายการวิชาเลือก
                             </Typography>
-
                             <Box sx={{ width: '100%', overflow: 'hidden' }}>
                                 <SubjectTable
-                                    subjects={subjectsMap[sector.id] ?? null}
+                                    subjects={electiveSubjects ?? null}
                                     allSubjects={courseSubjects ?? []}
-                                    loading={subjectsLoading[sector.id] ?? false}
-                                    context={{ type: 'sector', sector }}
+                                    loading={electiveLoading}
+                                    context={{ type: 'elective', courseYearId: courseYearId ?? null }}
                                     sectors={allSemesters}
                                     courseYearId={courseYearId ?? null}
                                     courseYearYear={courseYearYear}
@@ -346,29 +382,9 @@ const SubjectSection: React.FC<{ courseYearId: number | null, courseYearYear?: n
                                     isReadOnly={isReadOnly}
                                 />
                             </Box>
-
                         </CustomTabPanel>
-                    ))
-                }
-                {/* Elective subjects tab panel */}
-                <CustomTabPanel key="elective" value={value} index={(Array.isArray(allSemesters) ? allSemesters : []).length}>
-                    <Typography sx={{ mb: 2, fontSize: "125%", alignContent: "center" }}>
-                        รายการวิชาเลือก
-                    </Typography>
-                    <Box sx={{ width: '100%', overflow: 'hidden' }}>
-                        <SubjectTable
-                            subjects={electiveSubjects ?? null}
-                            allSubjects={courseSubjects ?? []}
-                            loading={electiveLoading}
-                            context={{ type: 'elective', courseYearId: courseYearId ?? null }}
-                            sectors={allSemesters}
-                            courseYearId={courseYearId ?? null}
-                            courseYearYear={courseYearYear}
-                            onAdded={async () => { await fetchCourseYearSubjects(); }}
-                            isReadOnly={isReadOnly}
-                        />
-                    </Box>
-                </CustomTabPanel>
+                    </>
+                )}
             </Box>
 
             {/* Add Sector Modal */}

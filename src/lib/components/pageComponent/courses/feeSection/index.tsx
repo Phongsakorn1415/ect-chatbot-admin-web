@@ -109,7 +109,7 @@ const FeeSection: React.FC<Props> = ({ courseYearId, courseFee, onUpdated, isRea
 						isEditMode ? (
 							<>
 								<Button
-									variant="contained"
+									variant="outlined"
 									color="error"
 									sx={{ mr: 2 }}
 									onClick={handleCancel}
