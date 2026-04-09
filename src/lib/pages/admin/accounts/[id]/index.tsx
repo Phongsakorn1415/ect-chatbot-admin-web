@@ -6,7 +6,7 @@ import { useParams } from 'next/navigation'
 import ProfileCard from '@/lib/components/pageComponent/account[id]/profileCard'
 import InfoCard from '@/lib/components/pageComponent/account[id]/infoCard'
 
-import { Box, LinearProgress, Typography } from '@mui/material';
+import { Backdrop, Box, CircularProgress, Typography } from '@mui/material';
 import useBreakPointResolution from '@/lib/services/BreakPointResolusion';
 
 import { ContactInfo } from '@/lib/types/contact';
@@ -113,9 +113,9 @@ const AccountPage = () => {
 
     return (
         <>
-            {(isAccountDataLoaded || isContactDataLoaded) && (
-                <LinearProgress sx={{ position: 'sticky', top: 0, zIndex: 2 }} />
-            )}
+            <Backdrop sx={(theme) => ({ color: '#fff', zIndex: theme.zIndex.drawer + 1 })} open={isAccountDataLoaded || isContactDataLoaded}>
+                <CircularProgress color="inherit" />
+            </Backdrop>
             <Box sx={{ m: { xs: 1, md: 3 }, display: 'flex', flexDirection: 'column', gap: { xs: 2, md: 3 } }}>
                 <Typography variant="h4" gutterBottom>
                     ข้อมูลบัญชีผู้ใช้
