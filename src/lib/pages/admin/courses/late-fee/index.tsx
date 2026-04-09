@@ -1,6 +1,6 @@
 'use client'
 
-import { Backdrop, Box, CircularProgress, IconButton, Typography } from '@mui/material'
+import { Box, IconButton, LinearProgress, Typography } from '@mui/material'
 import React from 'react'
 import ListIcon from '@mui/icons-material/List';
 import MenuOpenIcon from '@mui/icons-material/MenuOpen';
@@ -92,6 +92,7 @@ const LateFeePage = () => {
                     }),
                 }}
             >
+                {loading && <LinearProgress sx={{ position: 'sticky', top: 0, zIndex: 2, mx: { xs: -1.5, sm: -2, md: -3 } }} />}
                 <Typography
                     variant='h4'
                     sx={{
@@ -112,12 +113,6 @@ const LateFeePage = () => {
                 </Typography>
                 <LateFeeSection />
             </Box>
-            <Backdrop
-                sx={(theme) => ({ color: '#fff', zIndex: theme.zIndex.drawer + 99 })}
-                open={loading}
-            >
-                <CircularProgress color="inherit" />
-            </Backdrop>
             <NewCourseModal
                 open={openNewCourseModal}
                 onClose={() => setOpenNewCourseModal(false)}

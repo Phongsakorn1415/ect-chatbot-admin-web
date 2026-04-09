@@ -1,4 +1,4 @@
-import { Box, Button, Drawer, IconButton, Link, Paper, Typography, Backdrop, CircularProgress } from '@mui/material'
+import { Box, Button, Drawer, IconButton, Link, Paper, Typography, LinearProgress } from '@mui/material'
 import React, { useTransition } from 'react'
 import useBreakPointResolution from '@/lib/services/BreakPointResolusion'
 import { useSession } from 'next-auth/react'
@@ -101,12 +101,11 @@ const MainDrawer = ({ isOpen, HandleDrawerClose, handleDrawerTransitionEnd }: Ma
           <DrawerContent />
         </Paper>
       )}
-      <Backdrop
-        sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
-        open={isPending}
-      >
-        <CircularProgress color="inherit" />
-      </Backdrop>
+      {isPending && (
+        <LinearProgress
+          sx={{ position: 'fixed', top: 64, left: 0, right: 0, zIndex: (theme) => theme.zIndex.drawer + 20 }}
+        />
+      )}
     </>
   )
 }

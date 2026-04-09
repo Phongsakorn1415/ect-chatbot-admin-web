@@ -1,6 +1,6 @@
 'use client'
 
-import { Backdrop, Box, Button, CircularProgress, Grid, IconButton, Link, Paper, Typography } from '@mui/material'
+import { Box, Button, IconButton, LinearProgress, Link, Paper, Typography } from '@mui/material'
 import React from 'react'
 
 import ListIcon from '@mui/icons-material/List';
@@ -165,6 +165,7 @@ const CoursesPage = () => {
           }),
         }}
       >
+        {loading && <LinearProgress sx={{ position: 'sticky', top: 0, zIndex: 2, mx: { xs: -1.5, sm: -2, md: -3 } }} />}
         <Typography
           variant='h4'
           sx={{
@@ -238,12 +239,6 @@ const CoursesPage = () => {
         }
       </Box>
 
-      <Backdrop
-        sx={(theme) => ({ zIndex: theme.zIndex.drawer + 100 })}
-        open={loading}
-      >
-        <CircularProgress />
-      </Backdrop>
       <NewCourseModal
         open={openNewCourseModal}
         onClose={() => setOpenNewCourseModal(false)}

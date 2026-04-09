@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useEffect } from 'react'
-import { Backdrop, Box, Button, CircularProgress, Grid, Tab, Tabs, Typography } from '@mui/material'
+import { Box, Button, LinearProgress, Tab, Tabs, Typography } from '@mui/material'
 import MailOutlineRoundedIcon from '@mui/icons-material/MailOutlineRounded';
 
 import useBreakPointResolution from '@/lib/services/BreakPointResolusion'
@@ -70,6 +70,7 @@ const AccountsPage = () => {
 
   return (
     <>
+      {isLoading && <LinearProgress sx={{ position: 'sticky', top: 0, zIndex: 2 }} />}
       <Box sx={{ p: { xs: 1, md: 3 } }}>
         <Box sx={{ display: { xs: 'block', sm: 'flex' }, justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
           <Typography variant="h4">จัดการบัญชี</Typography>
@@ -116,12 +117,6 @@ const AccountsPage = () => {
       {alert && (
         <CustomAlert message={alert.message} severity={alert.severity} />
       )}
-      <Backdrop
-        sx={(theme) => ({ color: '#fff', zIndex: theme.zIndex.drawer + 99 })}
-        open={isLoading}
-      >
-        <CircularProgress color="inherit" />
-      </Backdrop>
     </>
   )
 }
