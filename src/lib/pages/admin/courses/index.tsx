@@ -210,13 +210,14 @@ const CoursesPage = () => {
               courseFee={courseFee}
               onUpdated={(fee) => setCourseFee(fee)}
               isReadOnly={isTeacher}
+              isLoading={loading}
             />
             <SubjectSection
               courseYearId={currentCourseYearID}
               courseYearYear={currentCourseYearID ? courseYear.find(cy => cy.id === currentCourseYearID)?.year ?? null : null}
               isReadOnly={isTeacher}
             />
-          </> :
+          </> : !loading ?
           <>
             <Paper elevation={5} sx={{ px: 2, py: 10, display: 'flex', justifyContent: 'center', alignItems: 'center', bgcolor: '#f5f5f5ff' }}>
               <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
@@ -233,7 +234,7 @@ const CoursesPage = () => {
                 </Box>
               </Box>
             </Paper>
-          </>
+          </> : null
         }
       </Box>
 
@@ -255,12 +256,6 @@ const CoursesPage = () => {
           });
         }}
       />
-      <Backdrop
-        sx={(theme) => ({ color: '#fff', zIndex: theme.zIndex.drawer + 99 })}
-        open={loading}
-      >
-        <CircularProgress color="inherit" />
-      </Backdrop>
     </Box>
   )
 }

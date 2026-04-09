@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react"
-import { Box, Button, IconButton, Paper, TextField, Typography } from "@mui/material"
+import { Box, Button, CircularProgress, IconButton, Paper, TextField, Typography } from "@mui/material"
 import { useParams } from "next/navigation"
 
 import AddIcon from '@mui/icons-material/Add';
@@ -143,7 +143,9 @@ const ContactSection = ({ contactData, accountId: accountIdProp, canEdit }: Cont
                 </Box>
                 <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
                     {isLoading ? (
-                        <Typography>Loading...</Typography>
+                        <Box sx={{ display: 'flex', justifyContent: 'center', py: 3 }}>
+                            <CircularProgress size={28} />
+                        </Box>
                     ) : allContactTypes.length > 0 ? (
                         allContactTypes.map((contactType) => {
                             const contactsOfType = contacts.filter((c) => c.contact_type?.id === contactType.id);

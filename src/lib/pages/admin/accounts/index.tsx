@@ -93,10 +93,11 @@ const AccountsPage = () => {
         <CustomTabPanel value={tab} index={0}>
           <AccountsTable
             data={accountsData}
+            isLoading={isLoading}
           />
         </CustomTabPanel>
         <CustomTabPanel value={tab} index={1}>
-          <InviteTable data={invitesData} onRefresh={refreshInvites} />
+          <InviteTable data={invitesData} onRefresh={refreshInvites} isLoading={isLoading} />
         </CustomTabPanel>
       </Box>
 

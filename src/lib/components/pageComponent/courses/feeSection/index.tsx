@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Button, Grid, TextField, Typography } from "@mui/material";
+import { Button, CircularProgress, Grid, Skeleton, TextField, Typography } from "@mui/material";
 import type { CourseFee } from "@/lib/types/course-fee";
 import CustomAlert from "@/lib/components/customAlert";
 
@@ -10,12 +10,14 @@ type Props = {
 	courseFee: CourseFee | null;
 	onUpdated?: (fee: CourseFee) => void;
 	isReadOnly?: boolean;
+	isLoading?: boolean;
 };
 
-const FeeSection: React.FC<Props> = ({ courseYearId, courseFee, onUpdated, isReadOnly }) => {
+const FeeSection: React.FC<Props> = ({ courseYearId, courseFee, onUpdated, isReadOnly, isLoading }) => {
 	const [isEditMode, setIsEditMode] = React.useState(false);
 	const [normalFee, setNormalFee] = React.useState<number>(0);
 	const [summerFee, setSummerFee] = React.useState<number>(0);
+	const [saving, setSaving] = React.useState(false);
 
 	// Alert state
 	const [alertOpen, setAlertOpen] = React.useState(false);
@@ -63,6 +65,7 @@ const FeeSection: React.FC<Props> = ({ courseYearId, courseFee, onUpdated, isRea
 		}
 		const confirm = window.confirm("คุณแน่ใจหรือไม่ว่าต้องการบันทึกการแก้ไข?");
 		if (!confirm) return;
+		setSaving(true);
 		try {
 			const response = await fetch(`/api/course/course-fee/${courseYearId}`, {
 				method: "POST",
@@ -78,6 +81,8 @@ const FeeSection: React.FC<Props> = ({ courseYearId, courseFee, onUpdated, isRea
 		} catch (err) {
 			console.error(err);
 			showAlert("บันทึกค่าเทอมไม่สำเร็จ กรุณาลองอีกครั้ง", "error");
+		} finally {
+			setSaving(false);
 		}
 	};
 
@@ -100,7 +105,7 @@ const FeeSection: React.FC<Props> = ({ courseYearId, courseFee, onUpdated, isRea
 					</Typography>
 				</Grid>
 				<Grid size={6} sx={{ display: "flex", justifyContent: "end", alignItems: "center" }}>
-					{!isReadOnly && (
+					{!isReadOnly && !isLoading && (
 						isEditMode ? (
 							<>
 								<Button
@@ -108,6 +113,7 @@ const FeeSection: React.FC<Props> = ({ courseYearId, courseFee, onUpdated, isRea
 									color="error"
 									sx={{ mr: 2 }}
 									onClick={handleCancel}
+									disabled={saving}
 								>
 									ยกเลิก
 								</Button>
@@ -115,8 +121,10 @@ const FeeSection: React.FC<Props> = ({ courseYearId, courseFee, onUpdated, isRea
 									variant="contained"
 									color="success"
 									onClick={handleSave}
+									disabled={saving}
+									startIcon={saving ? <CircularProgress size={16} color="inherit" /> : undefined}
 								>
-									บันทึก
+									{saving ? "กำลังบันทึก..." : "บันทึก"}
 								</Button>
 							</>
 						) : (
@@ -129,24 +137,28 @@ const FeeSection: React.FC<Props> = ({ courseYearId, courseFee, onUpdated, isRea
 			</Grid>
 			<Grid container spacing={2} sx={{ mt: 1, mb: 4 }}>
 				<Grid size={{ xs: 12, md: 6 }}>
-					<TextField
-						id="normalFee"
-						label="ค่าเทอม (บาท)"
-						value={normalFee ?? 0}
-						onChange={(e) => setNormalFee(Number(e.target.value))}
-						fullWidth
-						disabled={!isEditMode}
-					/>
+					{isLoading ? <Skeleton variant="rounded" height={56} /> : (
+						<TextField
+							id="normalFee"
+							label="ค่าเทอม (บาท)"
+							value={normalFee ?? 0}
+							onChange={(e) => setNormalFee(Number(e.target.value))}
+							fullWidth
+							disabled={!isEditMode}
+						/>
+					)}
 				</Grid>
 				<Grid size={{ xs: 12, md: 6 }}>
-					<TextField
-						id="summerFee"
-						label="ค่าเทอม ภาคฤดูร้อน (บาท)"
-						value={summerFee ?? 0}
-						onChange={(e) => setSummerFee(Number(e.target.value))}
-						fullWidth
-						disabled={!isEditMode}
-					/>
+					{isLoading ? <Skeleton variant="rounded" height={56} /> : (
+						<TextField
+							id="summerFee"
+							label="ค่าเทอม ภาคฤดูร้อน (บาท)"
+							value={summerFee ?? 0}
+							onChange={(e) => setSummerFee(Number(e.target.value))}
+							fullWidth
+							disabled={!isEditMode}
+						/>
+					)}
 				</Grid>
 			</Grid>
 		</>

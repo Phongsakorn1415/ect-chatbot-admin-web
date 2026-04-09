@@ -8,6 +8,7 @@ import type { SearchKey } from "@/lib/types/subject-search";
 import type { educationSector } from "@/lib/types/course-year";
 import AddSubjectModal from "./addSubjectModal";
 import EditSubjectModal from "./editSubjectModal";
+import SubjectDetailDialog from "./SubjectDetailDialog";
 
 type AddContext =
     | { type: 'sector'; sector: educationSector }
@@ -39,6 +40,7 @@ const SubjectTable: React.FC<Props> = ({ subjects, allSubjects = [], loading = f
     // Modal state
     const [openAdd, setOpenAdd] = useState(false);
     const [openEdit, setOpenEdit] = useState(false);
+    const [selectedSubject, setSelectedSubject] = useState<Subject | null>(null);
 
     // Search state
     const [searchKey, setSearchKey] = useState<SearchKey>("code");
@@ -187,6 +189,7 @@ const SubjectTable: React.FC<Props> = ({ subjects, allSubjects = [], loading = f
                             <TableCell>ชื่อวิชา</TableCell>
                             <TableCell>หน่วยกิต</TableCell>
                             <TableCell>สอนด้วยภาษา</TableCell>
+                            <TableCell align="center">PRE/CO</TableCell>
                         </TableRow>
                     </TableHead>
                     <TableBody>
@@ -194,14 +197,14 @@ const SubjectTable: React.FC<Props> = ({ subjects, allSubjects = [], loading = f
                             if (loading) {
                                 return (
                                     <TableRow>
-                                        <TableCell colSpan={isReadOnly ? 4 : 5} align="center">กำลังโหลด...</TableCell>
+                                        <TableCell colSpan={isReadOnly ? 5 : 6} align="center">กำลังโหลด...</TableCell>
                                     </TableRow>
                                 );
                             }
                             if (!subjects || safeSubjects.length === 0) {
                                 return (
                                     <TableRow>
-                                        <TableCell colSpan={isReadOnly ? 4 : 5} align="center">ไม่มีข้อมูลวิชา</TableCell>
+                                        <TableCell colSpan={isReadOnly ? 5 : 6} align="center">ไม่มีข้อมูลวิชา</TableCell>
                                     </TableRow>
                                 );
                             }
@@ -215,6 +218,7 @@ const SubjectTable: React.FC<Props> = ({ subjects, allSubjects = [], loading = f
                                         disabled={loading}
                                         onToggle={() => handleRowToggle(subject.id)}
                                         isReadOnly={isReadOnly}
+                                        onRowClick={(s) => setSelectedSubject(s)}
                                     />
                                 );
                             });
@@ -257,6 +261,19 @@ const SubjectTable: React.FC<Props> = ({ subjects, allSubjects = [], loading = f
                 courseYearYear={courseYearYear}
                 onAdded={() => {
                     setOpenAdd(false);
+                    onAdded?.();
+                }}
+            />
+
+            {/* Subject Detail Dialog */}
+            <SubjectDetailDialog
+                open={!!selectedSubject}
+                subject={selectedSubject}
+                allSubjects={allSubjects}
+                sectors={sectors}
+                onClose={() => setSelectedSubject(null)}
+                onUpdated={() => {
+                    setSelectedSubject(null);
                     onAdded?.();
                 }}
             />
