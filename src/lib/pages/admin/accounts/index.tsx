@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useEffect } from 'react'
-import { Backdrop, Box, Button, CircularProgress, Grid, Tab, Tabs, Typography } from '@mui/material'
+import { Backdrop, Box, Button, CircularProgress, Tab, Tabs, Typography } from '@mui/material'
 import MailOutlineRoundedIcon from '@mui/icons-material/MailOutlineRounded';
 
 import useBreakPointResolution from '@/lib/services/BreakPointResolusion'
@@ -93,10 +93,11 @@ const AccountsPage = () => {
         <CustomTabPanel value={tab} index={0}>
           <AccountsTable
             data={accountsData}
+            isLoading={isLoading}
           />
         </CustomTabPanel>
         <CustomTabPanel value={tab} index={1}>
-          <InviteTable data={invitesData} onRefresh={refreshInvites} />
+          <InviteTable data={invitesData} onRefresh={refreshInvites} isLoading={isLoading} />
         </CustomTabPanel>
       </Box>
 
@@ -116,7 +117,7 @@ const AccountsPage = () => {
         <CustomAlert message={alert.message} severity={alert.severity} />
       )}
       <Backdrop
-        sx={(theme) => ({ color: '#fff', zIndex: theme.zIndex.drawer + 99 })}
+        sx={(theme) => ({ color: '#fff', zIndex: theme.zIndex.drawer + 1 })}
         open={isLoading}
       >
         <CircularProgress color="inherit" />

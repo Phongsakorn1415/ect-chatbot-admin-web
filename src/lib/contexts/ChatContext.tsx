@@ -115,7 +115,11 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
                 setMessages((prev) => [...prev, botResponse]);
             } catch (error) {
                 console.error("SendMessage error", error);
-                // Could revert optimistic update here if desired
+                const errorMessage: Message = {
+                    role: "bot",
+                    content: "เกิดข้อผิดพลาด ไม่สามารถส่งข้อความได้ กรุณาลองอีกครั้ง",
+                };
+                setMessages((prev) => [...prev, errorMessage]);
             } finally {
                 setIsSending(false);
             }

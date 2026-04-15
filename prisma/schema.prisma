@@ -101,13 +101,24 @@ model subject {
   Course_year_id      Course_year?      @relation(fields: [course_yearId], references: [id])
   course_yearId       Int?
   teach               teach[]
-  prerequisiteId      Int?
-  prerequisite        subject?          @relation("SubjectPrerequisite", fields: [prerequisiteId], references: [id])
-  prerequisiteFor     subject[]         @relation("SubjectPrerequisite")
+  dependencies        SubjectRelation[] @relation("SubjectDependencies")
+  requiredBy          SubjectRelation[] @relation("SubjectRequirements")
   createdAt           DateTime          @default(now())
   updatedAt           DateTime          @updatedAt
 
   @@unique([course_yearId, code])
+}
+
+model SubjectRelation {
+  id         Int          @id @default(autoincrement())
+  subjectId  Int
+  requiresId Int
+  type       RelationType
+  subject    subject      @relation("SubjectDependencies", fields: [subjectId], references: [id], onDelete: Cascade)
+  requires   subject      @relation("SubjectRequirements", fields: [requiresId], references: [id], onDelete: Cascade)
+  createdAt  DateTime     @default(now())
+
+  @@unique([subjectId, requiresId])
 }
 
 model teach {
@@ -189,4 +200,9 @@ enum FeeUnit {
 enum OtpPurpose {
   CHANGE_PASSWORD
   RESET_PASSWORD
+}
+
+enum RelationType {
+  PRE
+  CO
 }

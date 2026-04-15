@@ -98,7 +98,7 @@ const OtherPage = () => {
     {
       title: 'สร้าง Embedding ใหม่',
       description: <>
-        <Typography variant='body1' color='text.primary' sx={{ fontWeight: 'bold' }}>จำนวนชื่อที่ยังไม่ได้สร้าง Embedding: {embeddingCount}</Typography>
+        <Typography variant='body1' color='text.primary' sx={{ fontWeight: 'bold' }}>จำนวนชื่อที่ยังไม่ได้สร้าง Embedding: {isApiLoading ? '—' : embeddingCount}</Typography>
         <Typography variant='body2' color='text.secondary' sx={{ mt: 1 }}>ปรับปรุงฐานข้อมูล Embedding ของระบบ AI สำหรับรายวิชาและผู้ใช้งาน ในกรณีที่เกิดข้อผิดพลาดและไม่สามารถสร้าง Embedding ได้ตอนเพิ่มข้อมูล</Typography>
       </>,
       icon: <AutoAwesomeIcon sx={{ fontSize: 40, color: 'primary.main' }} />,

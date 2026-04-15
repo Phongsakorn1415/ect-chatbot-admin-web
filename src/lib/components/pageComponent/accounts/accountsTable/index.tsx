@@ -1,6 +1,6 @@
 "use client"
 
-import { Box, Button, Checkbox, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, TablePagination } from "@mui/material"
+import { Box, Button, Checkbox, Skeleton, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, TablePagination } from "@mui/material"
 import { useState, useCallback, useMemo } from "react"
 import dayjs from "dayjs"
 import { TableAccountProps } from "@/lib/types/accounts"
@@ -9,7 +9,7 @@ import AccountRow from "./AccountRow"
 import AccountSearchControls from "./SearchControls"
 import { useSession } from "next-auth/react"
 
-const AccountsTable = ({ data }: { data: TableAccountProps[] }) => {
+const AccountsTable = ({ data, isLoading }: { data: TableAccountProps[]; isLoading?: boolean }) => {
     const { data: session } = useSession();
     const viewerRole = (session?.user as any)?.role;
 
@@ -229,22 +229,35 @@ const AccountsTable = ({ data }: { data: TableAccountProps[] }) => {
                         </TableRow>
                     </TableHead>
                     <TableBody>
-                        {paginatedData.map((account) => (
-                            <AccountRow
-                                key={account.id}
-                                account={account}
-                                isSelected={selectedItems.includes(account.id)}
-                                onSelectRow={handleSelectRow}
-                                loading={loading}
-                                viewerRole={viewerRole}
-                            />
-                        ))}
-                        {paginatedData.length === 0 && (
-                            <TableRow>
-                                <TableCell colSpan={7} align="center" sx={{ py: 3 }}>
-                                    ไม่พบข้อมูลที่ตรงกับเงื่อนไขการค้นหา
-                                </TableCell>
-                            </TableRow>
+                        {isLoading ? (
+                            Array.from({ length: 5 }).map((_, i) => (
+                                <TableRow key={i}>
+                                    <TableCell padding="checkbox"><Skeleton variant="rectangular" width={18} height={18} /></TableCell>
+                                    {Array.from({ length: 6 }).map((__, j) => (
+                                        <TableCell key={j}><Skeleton variant="text" /></TableCell>
+                                    ))}
+                                </TableRow>
+                            ))
+                        ) : (
+                            <>
+                                {paginatedData.map((account) => (
+                                    <AccountRow
+                                        key={account.id}
+                                        account={account}
+                                        isSelected={selectedItems.includes(account.id)}
+                                        onSelectRow={handleSelectRow}
+                                        loading={loading}
+                                        viewerRole={viewerRole}
+                                    />
+                                ))}
+                                {paginatedData.length === 0 && (
+                                    <TableRow>
+                                        <TableCell colSpan={7} align="center" sx={{ py: 3 }}>
+                                            ไม่พบข้อมูลที่ตรงกับเงื่อนไขการค้นหา
+                                        </TableCell>
+                                    </TableRow>
+                                )}
+                            </>
                         )}
                     </TableBody>
                 </Table>

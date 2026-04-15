@@ -1,4 +1,4 @@
-import { Box, Button, Checkbox, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, TablePagination } from "@mui/material";
+import { Box, Button, Checkbox, Skeleton, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, TablePagination } from "@mui/material";
 import { useState, useCallback, useMemo } from "react";
 import dayjs from "dayjs";
 import { TableInvitationsProps } from "@/lib/types/invitations";
@@ -10,9 +10,10 @@ import { useSession } from "next-auth/react";
 interface Props {
     data: TableInvitationsProps[];
     onRefresh?: () => Promise<void> | void;
+    isLoading?: boolean;
 }
 
-const InviteTable = ({ data, onRefresh }: Props) => {
+const InviteTable = ({ data, onRefresh, isLoading }: Props) => {
     const { data: session } = useSession();
     const viewerRole = (session?.user as any)?.role;
 
@@ -291,22 +292,35 @@ const InviteTable = ({ data, onRefresh }: Props) => {
                         </TableRow>
                     </TableHead>
                     <TableBody>
-                        {paginatedData.map((invite) => (
-                            <InviteRow
-                                key={invite.id}
-                                invite={invite}
-                                isSelected={selectedItems.includes(invite.id)}
-                                onSelectRow={handleSelectRow}
-                                loading={loading}
-                                viewerRole={viewerRole}
-                            />
-                        ))}
-                        {paginatedData.length === 0 && (
-                            <TableRow>
-                                <TableCell colSpan={9} align="center" sx={{ py: 3 }}>
-                                    ไม่พบข้อมูลที่ตรงกับเงื่อนไขการค้นหา
-                                </TableCell>
-                            </TableRow>
+                        {isLoading ? (
+                            Array.from({ length: 5 }).map((_, i) => (
+                                <TableRow key={i}>
+                                    <TableCell padding="checkbox"><Skeleton variant="rectangular" width={18} height={18} /></TableCell>
+                                    {Array.from({ length: 8 }).map((__, j) => (
+                                        <TableCell key={j}><Skeleton variant="text" /></TableCell>
+                                    ))}
+                                </TableRow>
+                            ))
+                        ) : (
+                            <>
+                                {paginatedData.map((invite) => (
+                                    <InviteRow
+                                        key={invite.id}
+                                        invite={invite}
+                                        isSelected={selectedItems.includes(invite.id)}
+                                        onSelectRow={handleSelectRow}
+                                        loading={loading}
+                                        viewerRole={viewerRole}
+                                    />
+                                ))}
+                                {paginatedData.length === 0 && (
+                                    <TableRow>
+                                        <TableCell colSpan={9} align="center" sx={{ py: 3 }}>
+                                            ไม่พบข้อมูลที่ตรงกับเงื่อนไขการค้นหา
+                                        </TableCell>
+                                    </TableRow>
+                                )}
+                            </>
                         )}
                     </TableBody>
                 </Table>

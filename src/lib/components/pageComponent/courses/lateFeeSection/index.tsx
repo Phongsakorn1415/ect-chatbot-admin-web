@@ -1,12 +1,14 @@
 "use client";
 
 import React from "react";
-import { Button, Grid, TextField, Typography, MenuItem, Select, InputLabel, FormControl } from "@mui/material";
+import { Button, CircularProgress, Grid, Skeleton, TextField, Typography, MenuItem, Select, InputLabel, FormControl } from "@mui/material";
 import CustomAlert from "@/lib/components/customAlert";
 import { LateFee, FeeUnit } from "@/lib/types/late-fee";
 
 const LateFeeSection: React.FC = () => {
     const [isEditMode, setIsEditMode] = React.useState(false);
+    const [isLoading, setIsLoading] = React.useState(true);
+    const [saving, setSaving] = React.useState(false);
 
     // State for the fields
     const [rate, setRate] = React.useState<number>(0);
@@ -50,6 +52,7 @@ const LateFeeSection: React.FC = () => {
     // Fetch data on mount
     React.useEffect(() => {
         const fetchLateFee = async () => {
+            setIsLoading(true);
             try {
                 const response = await fetch('/api/course/late-fee');
                 if (response.ok) {
@@ -68,6 +71,8 @@ const LateFeeSection: React.FC = () => {
                 }
             } catch (error) {
                 console.error('Failed to fetch late fee:', error);
+            } finally {
+                setIsLoading(false);
             }
         };
         fetchLateFee();
@@ -76,6 +81,7 @@ const LateFeeSection: React.FC = () => {
     const handleSave = async () => {
         const confirm = window.confirm("คุณแน่ใจหรือไม่ว่าต้องการบันทึกการแก้ไข?");
         if (!confirm) return;
+        setSaving(true);
         try {
             const response = await fetch(`/api/course/late-fee`, {
                 method: "POST",
@@ -101,6 +107,8 @@ const LateFeeSection: React.FC = () => {
         } catch (err) {
             console.error(err);
             showAlert("บันทึกค่าปรับไม่สำเร็จ กรุณาลองอีกครั้ง", "error");
+        } finally {
+            setSaving(false);
         }
     };
 
@@ -129,13 +137,14 @@ const LateFeeSection: React.FC = () => {
                     </Typography>
                 </Grid>
                 <Grid size={6} sx={{ display: "flex", justifyContent: "end", alignItems: "center" }}>
-                    {isEditMode ? (
+                    {!isLoading && (isEditMode ? (
                         <>
                             <Button
                                 variant="contained"
                                 color="error"
                                 sx={{ mr: 2 }}
                                 onClick={handleCancel}
+                                disabled={saving}
                             >
                                 ยกเลิก
                             </Button>
@@ -143,56 +152,64 @@ const LateFeeSection: React.FC = () => {
                                 variant="contained"
                                 color="success"
                                 onClick={handleSave}
+                                disabled={saving}
+                                startIcon={saving ? <CircularProgress size={16} color="inherit" /> : undefined}
                             >
-                                บันทึก
+                                {saving ? "กำลังบันทึก..." : "บันทึก"}
                             </Button>
                         </>
                     ) : (
                         <Button variant="contained" color="warning" onClick={() => setIsEditMode(true)}>
                             แก้ไข
                         </Button>
-                    )}
+                    ))}
                 </Grid>
             </Grid>
             <Grid container spacing={2} sx={{ mt: 1, mb: 4 }}>
                 <Grid size={{ xs: 12, md: 4 }}>
-                    <TextField
-                        id="lateFeeRate"
-                        label="ค่าปรับ (บาท)"
-                        value={rate}
-                        onChange={(e) => setRate(Number(e.target.value))}
-                        fullWidth
-                        type="number"
-                        disabled={!isEditMode}
-                    />
+                    {isLoading ? <Skeleton variant="rounded" height={56} /> : (
+                        <TextField
+                            id="lateFeeRate"
+                            label="ค่าปรับ (บาท)"
+                            value={rate}
+                            onChange={(e) => setRate(Number(e.target.value))}
+                            fullWidth
+                            type="number"
+                            disabled={!isEditMode}
+                        />
+                    )}
                 </Grid>
                 <Grid size={{ xs: 12, md: 4 }}>
-                    <FormControl fullWidth disabled={!isEditMode}>
-                        <InputLabel id="unit-select-label">ต่อระยะเวลา</InputLabel>
-                        <Select
-                            labelId="unit-select-label"
-                            id="unit-select"
-                            value={unit}
-                            label="ต่อระยะเวลา"
-                            onChange={(e) => setUnit(e.target.value as FeeUnit)}
-                        >
-                            <MenuItem value={FeeUnit.DAY}>{unitLabel[FeeUnit.DAY]}</MenuItem>
-                            <MenuItem value={FeeUnit.WEEK}>{unitLabel[FeeUnit.WEEK]}</MenuItem>
-                            <MenuItem value={FeeUnit.MONTH}>{unitLabel[FeeUnit.MONTH]}</MenuItem>
-                        </Select>
-                    </FormControl>
+                    {isLoading ? <Skeleton variant="rounded" height={56} /> : (
+                        <FormControl fullWidth disabled={!isEditMode}>
+                            <InputLabel id="unit-select-label">ต่อระยะเวลา</InputLabel>
+                            <Select
+                                labelId="unit-select-label"
+                                id="unit-select"
+                                value={unit}
+                                label="ต่อระยะเวลา"
+                                onChange={(e) => setUnit(e.target.value as FeeUnit)}
+                            >
+                                <MenuItem value={FeeUnit.DAY}>{unitLabel[FeeUnit.DAY]}</MenuItem>
+                                <MenuItem value={FeeUnit.WEEK}>{unitLabel[FeeUnit.WEEK]}</MenuItem>
+                                <MenuItem value={FeeUnit.MONTH}>{unitLabel[FeeUnit.MONTH]}</MenuItem>
+                            </Select>
+                        </FormControl>
+                    )}
                 </Grid>
                 <Grid size={{ xs: 12, md: 4 }}>
-                    <TextField
-                        id="maxAmount"
-                        label="จำนวนค่าปรับสูงสุด (บาท)"
-                        value={maxAmount}
-                        onChange={(e) => setMaxAmount(Number(e.target.value))}
-                        fullWidth
-                        type="number"
-                        disabled={!isEditMode}
-                        helperText="ใส่ 0 หากไม่จำกัด"
-                    />
+                    {isLoading ? <Skeleton variant="rounded" height={56} /> : (
+                        <TextField
+                            id="maxAmount"
+                            label="จำนวนค่าปรับสูงสุด (บาท)"
+                            value={maxAmount}
+                            onChange={(e) => setMaxAmount(Number(e.target.value))}
+                            fullWidth
+                            type="number"
+                            disabled={!isEditMode}
+                            helperText="ใส่ 0 หากไม่จำกัด"
+                        />
+                    )}
                 </Grid>
             </Grid>
         </>

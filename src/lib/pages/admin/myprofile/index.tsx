@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useEffect, useState } from 'react'
-import { Box, Typography } from '@mui/material'
+import { Backdrop, Box, CircularProgress, Typography } from '@mui/material'
 import { useSession } from 'next-auth/react'
 
 import ProfileCard from '@/lib/components/pageComponent/account[id]/profileCard'
@@ -83,6 +83,9 @@ const MyProfilePage = () => {
 
   return (
     <>
+      <Backdrop sx={(theme) => ({ color: '#fff', zIndex: theme.zIndex.drawer + 1 })} open={isAccountDataLoaded || isContactDataLoaded}>
+        <CircularProgress color="inherit" />
+      </Backdrop>
       <Box sx={{ m: { xs: 1, md: 3 }, display: 'flex', flexDirection: 'column', gap: { xs: 2, md: 3 } }}>
         <Typography variant="h4" gutterBottom>
           ข้อมูลบัญชีผู้ใช้

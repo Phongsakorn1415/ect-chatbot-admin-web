@@ -19,7 +19,10 @@ export async function GET(
 
   const subjects = await db.subject.findMany({
     where: { course_yearId: courseYearId },
-    include: { prerequisiteFor: true },
+    include: {
+      dependencies: { include: { requires: true } },
+      requiredBy: { include: { subject: true } },
+    },
   });
 
   return NextResponse.json(subjects);

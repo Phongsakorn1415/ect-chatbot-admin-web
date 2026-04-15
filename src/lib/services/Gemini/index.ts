@@ -241,7 +241,8 @@ async function getDataFromPDF(pdfData: string) {
       },
     ],
   };
-  const model = "gemini-2.5-flash";
+  // const model = "gemini-2.5-flash";
+  const model = "gemini-3-flash-preview";
 
   const contents = [
     {
@@ -256,14 +257,19 @@ async function getDataFromPDF(pdfData: string) {
       ],
     },
   ];
-
-  const response = await ai.models.generateContent({
-    model,
-    config,
-    contents,
-  });
-  console.log(response.text);
-  return JSON.parse(response.text || "[]");
+  try{
+    const response = await ai.models.generateContent({
+      model,
+      config,
+      contents,
+    });
+    console.log(response.text);
+    return JSON.parse(response.text || "[]");
+  }catch(error){
+    console.error("Error processing PDF:", error);
+    throw error;
+  }
+  
 }
 
 export { getDataFromImage, getDataFromPDF };

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState, useMemo } from "react";
+import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
     Dialog,
@@ -18,14 +18,9 @@ import {
     Select,
     MenuItem,
     FormControl,
-    InputLabel,
     Typography,
-    Alert,
-    Stack,
     Box,
-    IconButton,
 } from "@mui/material";
-import DeleteIcon from "@mui/icons-material/Delete";
 import { Subject } from "@/lib/types/subject";
 import { educationSector } from "@/lib/types/course-year";
 import { LANGUAGES } from "@/lib/constants/languages";
@@ -47,7 +42,6 @@ type EditRow = {
     language: string;
     education_sectorId: number | null; // null if elective (course_yearId should be derived/fixed, but we only edit sector or make elective)
     isRequire: boolean; // if false -> elective
-    prerequisiteId: number | null;
     original: Subject;
 };
 
@@ -76,7 +70,6 @@ const EditSubjectModal: React.FC<Props> = ({ open, onClose, subjects, allSubject
                     language: s.language === "ไทย" ? "thai" : s.language === "อังกฤษ" ? "eng" : (s.language ?? "thai"),
                     education_sectorId: s.education_sectorId,
                     isRequire: s.isRequire ?? true,
-                    prerequisiteId: s.prerequisiteId ?? null,
                     original: s,
                 }))
             );
@@ -110,55 +103,54 @@ const EditSubjectModal: React.FC<Props> = ({ open, onClose, subjects, allSubject
         return (s.year ?? 0) * 100 + (s.semester === 0 ? 3 : (s.semester ?? 0));
     };
 
-    // Filter valid prerequisites for a specific row
-    const getValidPrerequisites = (currentRow: EditRow) => {
-        const currentOrder = getSectorOrder(currentRow.education_sectorId);
-
-        return allSubjects.filter((s) => {
-            // Cannot be itself
-            if (s.id === currentRow.id) return false;
-            // Cannot be in the list of subjects currently being edited (to avoid circular deps introduced or complex graph updates in one go)
-            // Actually, we can allow it if the edited version is still valid, but simplest is to disallow referencing other rows being edited
-            // strict: if s.id is in rows.map(r => r.id), maybe exclude or use its *current* state?
-            // User requirement: "Can only choose subjects in previous sectors".
-
-            // Check sector of candidate
-            // If candidate is being edited, we should look at its *new* sector in `rows`, otherwise its original sector.
-            const sInEdit = rows.find(r => r.id === s.id);
-            const candidateSectorId = sInEdit ? sInEdit.education_sectorId : s.education_sectorId;
-            const candidateOrder = getSectorOrder(candidateSectorId);
-
-            return candidateOrder < currentOrder;
-        });
-    };
-
-    const handleSave = async (confirmedConflicts: boolean = false) => {
+const handleSave = async (confirmedConflicts: boolean = false) => {
         setSaving(true);
         try {
             // 1. Conflict Detection
+            // Check PRE relations: if we move a subject to a later/equal sector than its PRE-dependents
+            // Check CO relations: if we move a subject to a different sector than its CO partners
             if (!confirmedConflicts) {
                 const conflicts: ConflictData[] = [];
 
                 for (const row of rows) {
-                    // Check if we moved this subject to an earlier sector (or just changed sector)
-                    // We need to check if this subject is a prerequisite for OTHERS.
                     const originalSubj = allSubjects.find(s => s.id === row.id);
-                    if (!originalSubj?.prerequisiteFor || originalSubj.prerequisiteFor.length === 0) continue;
+                    if (!originalSubj) continue;
 
                     const newOrder = getSectorOrder(row.education_sectorId);
 
-                    for (const dependent of originalSubj.prerequisiteFor) {
-                        // Check if dependent is also being edited
+                    // PRE conflicts: subjects that have this subject as PRE (requiredBy PRE)
+                    const preRequiredBy = (originalSubj.requiredBy ?? []).filter(r => r.type === "PRE");
+                    for (const rel of preRequiredBy) {
+                        const dependent = allSubjects.find(s => s.id === rel.subjectId);
+                        if (!dependent) continue;
                         const dependentInEdit = rows.find(r => r.id === dependent.id);
                         const dependentSectorId = dependentInEdit ? dependentInEdit.education_sectorId : dependent.education_sectorId;
                         const dependentOrder = getSectorOrder(dependentSectorId);
-
-                        // Rule: Prerequisite (this row) must be strictly < Dependent
                         if (newOrder >= dependentOrder) {
                             conflicts.push({
                                 subjectName: row.name,
                                 dependentName: dependent.name ?? "Unknown",
                                 dependentId: dependent.id,
+                            });
+                        }
+                    }
+
+                    // CO conflicts: CO partners must stay in same sector
+                    const coDeps = (originalSubj.dependencies ?? []).filter(r => r.type === "CO");
+                    const coReqs = (originalSubj.requiredBy ?? []).filter(r => r.type === "CO");
+                    for (const rel of [...coDeps, ...coReqs]) {
+                        const partnerId = rel.type === "CO" && (rel as any).requiresId !== undefined
+                            ? (rel as any).requiresId
+                            : rel.subjectId;
+                        const partner = allSubjects.find(s => s.id === partnerId);
+                        if (!partner) continue;
+                        const partnerInEdit = rows.find(r => r.id === partner.id);
+                        const partnerSectorId = partnerInEdit ? partnerInEdit.education_sectorId : partner.education_sectorId;
+                        if (partnerSectorId !== row.education_sectorId) {
+                            conflicts.push({
+                                subjectName: row.name,
+                                dependentName: `${partner.name ?? "Unknown"} (CO)`,
+                                dependentId: partner.id,
                             });
                         }
                     }
@@ -171,21 +163,23 @@ const EditSubjectModal: React.FC<Props> = ({ open, onClose, subjects, allSubject
                 }
             }
 
-            // 2. Resolve Conflicts (Remove prerequisites from dependents)
+            // 2. Resolve Conflicts (Remove PRE/CO relations from affected subjects)
             if (confirmedConflicts && conflictAlert) {
-                const depIdsToRemove = conflictAlert.conflicts.map(c => c.dependentId);
-                // Unique IDs
-                const uniqueDepIds = Array.from(new Set(depIdsToRemove));
-
-                await Promise.all(uniqueDepIds.map(async (depId) => {
-                    // We simply remove the prerequisite link.
-                    // Assuming PATCH /api/course/subject/[id] can accept prerequisiteId: null
+                const depIdsToRemove = Array.from(new Set(conflictAlert.conflicts.map(c => c.dependentId)));
+                await Promise.all(depIdsToRemove.map(async (depId) => {
+                    const depSubj = allSubjects.find(s => s.id === depId);
+                    if (!depSubj) return;
+                    // Keep only relations that don't involve the moved subjects
+                    const movedIds = new Set(rows.map(r => r.id));
+                    const remainingPrereqs = (depSubj.dependencies ?? [])
+                        .filter(r => !movedIds.has(r.requiresId))
+                        .map(r => ({ requiresId: r.requiresId, type: r.type as "PRE" | "CO" }));
                     const res = await fetch(`/api/course/subject/${depId}`, {
                         method: "PATCH",
                         headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({ prerequisiteId: null })
+                        body: JSON.stringify({ prerequisites: remainingPrereqs }),
                     });
-                    if (!res.ok) throw new Error(`Failed to remove prerequisite from subject ID ${depId}`);
+                    if (!res.ok) throw new Error(`Failed to remove relations from subject ID ${depId}`);
                 }));
             }
 
@@ -193,15 +187,14 @@ const EditSubjectModal: React.FC<Props> = ({ open, onClose, subjects, allSubject
             const changedNameIDs: number[] = [];
 
             await Promise.all(rows.map(async (row) => {
-                const { id, code, name, credit, language, education_sectorId, isRequire, prerequisiteId } = row;
+                const { id, code, name, credit, language, education_sectorId, isRequire } = row;
 
-                // Construct payload
+                // Construct payload — no prerequisites field here (prerequisites managed via SubjectDetailDialog)
                 const payload: any = {
                     code,
                     name,
                     credit,
                     language,
-                    prerequisiteId
                 };
 
                 // Clear old embedding if name changed
@@ -280,7 +273,6 @@ const EditSubjectModal: React.FC<Props> = ({ open, onClose, subjects, allSubject
                                     <TableCell sx={{ width: 80 }}>หน่วยกิต</TableCell>
                                     <TableCell sx={{ width: 80 }}>ภาษา</TableCell>
                                     <TableCell sx={{ width: 180 }}>ภาคการศึกษา</TableCell>
-                                    <TableCell sx={{ width: 200 }}>วิชาที่ต้องเรียนก่อน</TableCell>
                                 </TableRow>
                             </TableHead>
                             <TableBody>
@@ -335,27 +327,7 @@ const EditSubjectModal: React.FC<Props> = ({ open, onClose, subjects, allSubject
                                                         const newSectorId = val === "elective" ? null : Number(val);
                                                         setRows(prev => prev.map((r, i) => {
                                                             if (i === idx) {
-                                                                // If changing sector, we must check if current prerequisite is still valid?
-                                                                // Actually, handleSave conflict check handles "dependents".
-                                                                // But what if *this* subject's prerequisite becomes invalid?
-                                                                // (e.g. moved subject to Year 1, but keep Prereq Year 2)
-                                                                // Yup, we should check that too or auto-clear?
-                                                                // User requirement: "Can only choose subjects in previous sectors".
-                                                                // If we move this subject, let's auto-clear prerequisite if it's no longer valid.
-                                                                const updatedRow = { ...r, education_sectorId: newSectorId };
-
-                                                                // Check validity
-                                                                if (r.prerequisiteId) {
-                                                                    const prereq = allSubjects.find(s => s.id === r.prerequisiteId);
-                                                                    if (prereq) {
-                                                                        const myNewOrder = getSectorOrder(newSectorId);
-                                                                        const prereqOrder = getSectorOrder(prereq.education_sectorId);
-                                                                        if (prereqOrder >= myNewOrder) {
-                                                                            updatedRow.prerequisiteId = null;
-                                                                        }
-                                                                    }
-                                                                }
-                                                                return updatedRow;
+                                                                return { ...r, education_sectorId: newSectorId };
                                                             }
                                                             return r;
                                                         }));
@@ -367,27 +339,6 @@ const EditSubjectModal: React.FC<Props> = ({ open, onClose, subjects, allSubject
                                                         </MenuItem>
                                                     ))}
                                                     <MenuItem value="elective">วิชาเลือก</MenuItem>
-                                                </Select>
-                                            </FormControl>
-                                        </TableCell>
-                                        <TableCell>
-                                            <FormControl size="small" fullWidth>
-                                                <Select
-                                                    value={row.prerequisiteId ?? ""}
-                                                    displayEmpty
-                                                    onChange={(e) => {
-                                                        const val = e.target.value as string | number;
-                                                        setRows(prev => prev.map((r, i) => i === idx ? { ...r, prerequisiteId: val === "" ? null : Number(val) } : r));
-                                                    }}
-                                                >
-                                                    <MenuItem value="">
-                                                        <em>ไม่มี</em>
-                                                    </MenuItem>
-                                                    {getValidPrerequisites(row).map((s) => (
-                                                        <MenuItem key={s.id} value={s.id}>
-                                                            {s.code} {s.name}
-                                                        </MenuItem>
-                                                    ))}
                                                 </Select>
                                             </FormControl>
                                         </TableCell>

@@ -1,6 +1,6 @@
 'use client'
 
-import { Backdrop, Box, Button, CircularProgress, Grid, IconButton, Link, Paper, Typography } from '@mui/material'
+import { Backdrop, Box, Button, CircularProgress, IconButton, Link, Paper, Typography } from '@mui/material'
 import React from 'react'
 
 import ListIcon from '@mui/icons-material/List';
@@ -210,13 +210,14 @@ const CoursesPage = () => {
               courseFee={courseFee}
               onUpdated={(fee) => setCourseFee(fee)}
               isReadOnly={isTeacher}
+              isLoading={loading}
             />
             <SubjectSection
               courseYearId={currentCourseYearID}
               courseYearYear={currentCourseYearID ? courseYear.find(cy => cy.id === currentCourseYearID)?.year ?? null : null}
               isReadOnly={isTeacher}
             />
-          </> :
+          </> : !loading ?
           <>
             <Paper elevation={5} sx={{ px: 2, py: 10, display: 'flex', justifyContent: 'center', alignItems: 'center', bgcolor: '#f5f5f5ff' }}>
               <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
@@ -233,15 +234,15 @@ const CoursesPage = () => {
                 </Box>
               </Box>
             </Paper>
-          </>
+          </> : null
         }
       </Box>
 
       <Backdrop
-        sx={(theme) => ({ zIndex: theme.zIndex.drawer + 100 })}
+        sx={(theme) => ({ color: '#fff', zIndex: theme.zIndex.drawer + 1 })}
         open={loading}
       >
-        <CircularProgress />
+        <CircularProgress color="inherit" />
       </Backdrop>
       <NewCourseModal
         open={openNewCourseModal}
@@ -255,12 +256,6 @@ const CoursesPage = () => {
           });
         }}
       />
-      <Backdrop
-        sx={(theme) => ({ color: '#fff', zIndex: theme.zIndex.drawer + 99 })}
-        open={loading}
-      >
-        <CircularProgress color="inherit" />
-      </Backdrop>
     </Box>
   )
 }

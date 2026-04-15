@@ -1,3 +1,13 @@
+export interface SubjectRelation {
+  id: number;
+  subjectId: number;
+  requiresId: number;
+  type: "PRE" | "CO";
+  requires?: Subject;
+  subject?: Subject;
+  createdAt?: string;
+}
+
 export interface Subject {
   id: number;
   code?: string | null;
@@ -9,6 +19,6 @@ export interface Subject {
   course_yearId?: number | null;
   createdAt: string | null;
   updatedAt: string | null;
-  prerequisiteId: number | null;
-  prerequisiteFor?: Subject[];
+  dependencies?: SubjectRelation[];
+  requiredBy?: SubjectRelation[];
 }
