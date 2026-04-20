@@ -14,7 +14,7 @@ const transporter = nodemailer.createTransport({
 const SendMail = async ({ from, to, subject, text, html }: SendMailProps) => {
   const fromName =
     process.env.EMAIL_USER_DISPLAY ||
-    `"ECT Chatbot Admin" <${process.env.EMAIL_USER}>`;
+    process.env.EMAIL_USER;
   const finalFrom = from || fromName;
 
   return new Promise((resolve, reject) => {

@@ -399,7 +399,7 @@ const SubjectDetailDialog: React.FC<Props> = ({
           <>
             <Divider sx={{ mb: 2 }} />
             <Typography variant="subtitle2" gutterBottom>
-              ความต้องการก่อนเรียนของรายวิชา
+              ความสัมพันธ์ของรายวิชา
             </Typography>
 
             {/* PRE section */}
@@ -526,7 +526,7 @@ const SubjectDetailDialog: React.FC<Props> = ({
           <>
             <Divider sx={{ mb: 2 }} />
             <Typography variant="body2" color="text.secondary">
-              วิชาเลือกไม่มีความต้องการก่อนเรียนของรายวิชา
+              วิชาเลือกไม่มีความสัมพันธ์ของรายวิชา
             </Typography>
           </>
         )}

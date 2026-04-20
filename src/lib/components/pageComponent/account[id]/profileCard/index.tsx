@@ -211,7 +211,9 @@ const ProfileCard = ({ accountData, isAccountDataLoaded, onSaved }: { accountDat
                                     <Tooltip title="อีเมลไม่สามารถแก้ไขได้" arrow>
                                         <Typography variant='h6'>{accountData.email}</Typography>
                                     </Tooltip>
-                                    <Button variant="outlined" sx={{ mt: 1 }} onClick={() => setChangePasswordOpen(true)}>เปลี่ยนรหัสผ่าน</Button>
+                                    {isSelf && (
+                        <Button variant="outlined" sx={{ mt: 1 }} onClick={() => setChangePasswordOpen(true)}>เปลี่ยนรหัสผ่าน</Button>
+                    )}
                                 </Paper>
                             </Grid>
                             <Grid size={{ xs: 12, sm: 6 }}>

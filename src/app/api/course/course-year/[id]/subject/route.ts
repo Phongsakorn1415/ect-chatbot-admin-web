@@ -4,7 +4,7 @@ import { db } from "@/lib/database";
 // GET /api/course/course-year/:id/subject
 // Get all subjects in a specific course year
 export async function GET(
-  request: Request,
+  _request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
   const { id } = await params;
@@ -22,6 +22,7 @@ export async function GET(
     include: {
       dependencies: { include: { requires: true } },
       requiredBy: { include: { subject: true } },
+      Education_sector_id: { select: { id: true, year: true, semester: true } },
     },
   });
 

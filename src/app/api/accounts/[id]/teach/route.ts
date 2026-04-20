@@ -52,7 +52,14 @@ export async function GET(
                             select: {
                                 id: true,
                                 year: true,
-                              }
+                            }
+                        },
+                        Education_sector_id: {
+                            select: {
+                                id: true,
+                                year: true,
+                                semester: true,
+                            }
                         }
                     }
                 }

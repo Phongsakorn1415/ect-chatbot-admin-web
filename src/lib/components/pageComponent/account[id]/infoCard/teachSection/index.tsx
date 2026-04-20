@@ -1,6 +1,6 @@
 'use client'
 import React, { useEffect, useMemo, useState } from "react"
-import { Box, Tab, Tabs, Typography, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Skeleton, Checkbox, Toolbar, Button, TablePagination } from "@mui/material"
+import { Box, Tab, Tabs, Typography, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Skeleton, Checkbox, Toolbar, Button, TablePagination, Chip } from "@mui/material"
 import AddIcon from '@mui/icons-material/Add';
 import DeleteIcon from '@mui/icons-material/Delete';
 import { CustomTabPanel, a11yProps } from "@/lib/components/TabsProvider"
@@ -15,6 +15,7 @@ type TeachRow = {
     name: string
     code?: string | null
     Course_year_id: { id: number; year: number }
+    Education_sector_id?: { id: number; year: number; semester: number } | null
   }
 }
 
@@ -406,13 +407,23 @@ const TeachSection: React.FC<TeachSectionProps> = ({ accountId, canEdit }) => {
             const year = course.year as number;
             const courseId = course.id as number;
             const rows = subjectsByYear[year] ?? [];
-            const filteredRows = rows.filter(r => {
-              const code = (r.subject_id?.code ?? "").toString().toLowerCase();
-              const name = (r.subject_id?.name ?? "").toString().toLowerCase();
-              const codeOk = codeQuery.trim() === "" || code.includes(codeQuery.trim().toLowerCase());
-              const nameOk = nameQuery.trim() === "" || name.includes(nameQuery.trim().toLowerCase());
-              return codeOk && nameOk;
-            });
+            const filteredRows = rows
+              .filter(r => {
+                const code = (r.subject_id?.code ?? "").toString().toLowerCase();
+                const name = (r.subject_id?.name ?? "").toString().toLowerCase();
+                const codeOk = codeQuery.trim() === "" || code.includes(codeQuery.trim().toLowerCase());
+                const nameOk = nameQuery.trim() === "" || name.includes(nameQuery.trim().toLowerCase());
+                return codeOk && nameOk;
+              })
+              .sort((a, b) => {
+                const sa = a.subject_id?.Education_sector_id;
+                const sb = b.subject_id?.Education_sector_id;
+                if (!sa && !sb) return 0;
+                if (!sa) return 1;
+                if (!sb) return -1;
+                if (sa.year !== sb.year) return sa.year - sb.year;
+                return sa.semester - sb.semester;
+              });
             const rpp = rowsPerPageByCourse[courseId] ?? 10;
             const rawPage = pageByCourse[courseId] ?? 0;
             const totalPages = rpp > 0 ? Math.max(1, Math.ceil(filteredRows.length / rpp)) : 1;
@@ -466,20 +477,53 @@ const TeachSection: React.FC<TeachSectionProps> = ({ accountId, canEdit }) => {
                     </TableHead>
                     <TableBody>
                       {isSubjectsLoading && renderLoadingRows(5)}
-                      {!isSubjectsLoading && visibleRows.map((row) => (
-                        <TableRow key={row.id} hover>
-                          <TableCell padding="checkbox">
-                            <Checkbox
-                                size="small"
-                                disabled={!canEdit}
-                                checked={selectedIds.has(row.id)}
-                                onChange={() => canEdit && handleToggleSelect(row.id)}
-                            />
-                          </TableCell>
-                          <TableCell>{row.subject_id?.code ?? '-'}</TableCell>
-                          <TableCell>{row.subject_id?.name ?? '-'}</TableCell>
-                        </TableRow>
-                      ))}
+                      {!isSubjectsLoading && (() => {
+                        if (visibleRows.length === 0) return null;
+                        const getSectorKey = (row: TeachRow) => {
+                          const s = row.subject_id?.Education_sector_id;
+                          if (!s) return 'none';
+                          return `${s.year}-${s.semester}`;
+                        };
+                        const getSectorLabel = (row: TeachRow) => {
+                          const s = row.subject_id?.Education_sector_id;
+                          if (!s) return null;
+                          const semLabel = s.semester === 0 ? 'ภาคฤดูร้อน' : `ภาคการเรียนที่ ${s.semester}`;
+                          return `ปี ${s.year} ${semLabel}`;
+                        };
+                        const elements: React.ReactNode[] = [];
+                        let lastKey: string | null = null;
+                        visibleRows.forEach((row) => {
+                          const key = getSectorKey(row);
+                          if (key !== lastKey) {
+                            lastKey = key;
+                            const label = getSectorLabel(row);
+                            if (label) {
+                              elements.push(
+                                <TableRow key={`sector-${key}`} sx={{ backgroundColor: 'action.hover' }}>
+                                  <TableCell colSpan={3} sx={{ py: 0.5, px: 2 }}>
+                                    <Chip label={label} size="small" color="primary" variant="outlined" sx={{ fontWeight: 600, fontSize: '0.75rem' }} />
+                                  </TableCell>
+                                </TableRow>
+                              );
+                            }
+                          }
+                          elements.push(
+                            <TableRow key={row.id} hover>
+                              <TableCell padding="checkbox">
+                                <Checkbox
+                                  size="small"
+                                  disabled={!canEdit}
+                                  checked={selectedIds.has(row.id)}
+                                  onChange={() => canEdit && handleToggleSelect(row.id)}
+                                />
+                              </TableCell>
+                              <TableCell>{row.subject_id?.code ?? '-'}</TableCell>
+                              <TableCell>{row.subject_id?.name ?? '-'}</TableCell>
+                            </TableRow>
+                          );
+                        });
+                        return elements;
+                      })()}
                       {!isSubjectsLoading && rows.length > 0 && filteredRows.length === 0 && (
                         <TableRow>
                           <TableCell colSpan={3} align="center" sx={{ py: 4, color: 'text.secondary' }}>

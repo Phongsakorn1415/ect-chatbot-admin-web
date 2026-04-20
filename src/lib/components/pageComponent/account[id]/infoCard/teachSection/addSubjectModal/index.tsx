@@ -25,10 +25,17 @@ import {
     InputLabel,
     TextField,
     TablePagination,
+    Chip,
 } from '@mui/material'
 import { CustomTabPanel, a11yProps } from '@/lib/components/TabsProvider'
 
-type SubjectRow = { id: number; name: string; code?: string; course_yearId?: number }
+type SubjectRow = {
+    id: number
+    name: string
+    code?: string
+    course_yearId?: number
+    Education_sector_id?: { id: number; year: number; semester: number } | null
+}
 
 type Course = { id: number; year: number } & Record<string, any>
 
@@ -141,11 +148,19 @@ const AddSubjectModal: React.FC<AddSubjectModalProps> = ({
                     const checked = checkedByYear[yearNum] ?? new Set<number>()
                     const searchType = getSearchType(yearId)
                     const searchQuery = getSearchQuery(yearId).trim().toLowerCase()
-                    const filteredRows = !searchQuery
-                        ? rows
-                        : rows.filter(r => {
+                    const filteredRows = (!searchQuery ? rows : rows.filter(r => {
                             if (searchType === 'code') return (r.code ?? '').toLowerCase().includes(searchQuery)
                             return (r.name ?? '').toLowerCase().includes(searchQuery)
+                        }))
+                        .slice()
+                        .sort((a, b) => {
+                            const sa = a.Education_sector_id
+                            const sb = b.Education_sector_id
+                            if (!sa && !sb) return 0
+                            if (!sa) return 1
+                            if (!sb) return -1
+                            if (sa.year !== sb.year) return sa.year - sb.year
+                            return sa.semester - sb.semester
                         })
                     const rawPage = getPage(yearId)
                     const rpp = getRowsPerPage(yearId)
@@ -226,20 +241,43 @@ const AddSubjectModal: React.FC<AddSubjectModalProps> = ({
                                                     </TableCell>
                                                 </TableRow>
                                             ))}
-                                        {!loading &&
-                                            visibleRows.map((s, idx2) => (
-                                                <TableRow key={s.id} hover>
-                                                    <TableCell padding="checkbox">
-                                                        <Checkbox
-                                                            size="small"
-                                                            checked={checked.has(s.id)}
-                                                            onChange={() => onToggle(yearNum, s.id)}
-                                                        />
-                                                    </TableCell>
-                                                    <TableCell>{s.code ?? '-'}</TableCell>
-                                                    <TableCell>{s.name ?? '-'}</TableCell>
-                                                </TableRow>
-                                            ))}
+                                        {!loading && (() => {
+                                            const elements: React.ReactNode[] = []
+                                            let lastKey: string | null = null
+                                            visibleRows.forEach((s) => {
+                                                const sec = s.Education_sector_id
+                                                const key = sec ? `${sec.year}-${sec.semester}` : 'none'
+                                                if (key !== lastKey) {
+                                                    lastKey = key
+                                                    if (sec) {
+                                                        const label = sec.semester === 0
+                                                            ? `ปี ${sec.year} ภาคฤดูร้อน`
+                                                            : `ปี ${sec.year} ภาคการเรียนที่ ${sec.semester}`
+                                                        elements.push(
+                                                            <TableRow key={`sector-${key}`} sx={{ backgroundColor: 'action.hover' }}>
+                                                                <TableCell colSpan={3} sx={{ py: 0.5, px: 2 }}>
+                                                                    <Chip label={label} size="small" color="primary" variant="outlined" sx={{ fontWeight: 600, fontSize: '0.75rem' }} />
+                                                                </TableCell>
+                                                            </TableRow>
+                                                        )
+                                                    }
+                                                }
+                                                elements.push(
+                                                    <TableRow key={s.id} hover>
+                                                        <TableCell padding="checkbox">
+                                                            <Checkbox
+                                                                size="small"
+                                                                checked={checked.has(s.id)}
+                                                                onChange={() => onToggle(yearNum, s.id)}
+                                                            />
+                                                        </TableCell>
+                                                        <TableCell>{s.code ?? '-'}</TableCell>
+                                                        <TableCell>{s.name ?? '-'}</TableCell>
+                                                    </TableRow>
+                                                )
+                                            })
+                                            return elements
+                                        })()}
                                         {!loading && rows.length > 0 && filteredRows.length === 0 && (
                                             <TableRow>
                                                 <TableCell colSpan={3} align="center" sx={{ py: 4, color: 'text.secondary' }}>
