@@ -17,7 +17,7 @@ interface CardMenuProps {
 
 const CardMenu = ({ menuItems }: CardMenuProps) => {
     return (
-        <Grid container spacing={3}>
+        <Grid container spacing={{ xs: 8, sm: 3, md: 3 }}>
             {menuItems.map((item, idx) => (
                 <Grid size={{ xs: 12, sm: 6, md: 4 }} key={idx}>
                     <Paper elevation={2} sx={{ p: 3, borderRadius: 2, height: '100%', display: 'flex', flexDirection: 'column', position: 'relative', overflow: 'hidden' }}>

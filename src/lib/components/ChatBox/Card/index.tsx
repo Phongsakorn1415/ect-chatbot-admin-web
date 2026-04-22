@@ -159,6 +159,7 @@ const ChatBoxCard = () => {
                             maxWidth: '85%',
                             display: 'flex',
                             gap: 1,
+                            alignItems: 'flex-start',
                             flexDirection: msg.role === 'user' ? 'row-reverse' : 'row',
                         }}
                     >
@@ -183,7 +184,6 @@ const ChatBoxCard = () => {
                                     size="small"
                                     onClick={() => handleOpenReportModal(msg.logId)}
                                     sx={{
-                                        height: '50%',
                                         '&:hover': {
                                             color: 'error.main',
                                             bgcolor: 'none',

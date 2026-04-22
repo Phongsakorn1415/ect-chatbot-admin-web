@@ -159,6 +159,7 @@ const ChatBoxFull = () => {
                             maxWidth: '70%',
                             display: 'flex',
                             gap: 1,
+                            alignItems: 'flex-start',
                             flexDirection: msg.role === 'user' ? 'row-reverse' : 'row',
                         }}
                     >
@@ -182,7 +183,6 @@ const ChatBoxFull = () => {
                                     size="small"
                                     onClick={() => handleOpenReportModal(msg.logId)}
                                     sx={{
-                                        height: '50%',
                                         '&:hover': {
                                             color: 'error.main',
                                             bgcolor: 'none',
