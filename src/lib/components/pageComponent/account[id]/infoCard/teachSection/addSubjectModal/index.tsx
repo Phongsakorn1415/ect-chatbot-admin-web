@@ -34,6 +34,7 @@ type SubjectRow = {
     name: string
     code?: string
     course_yearId?: number
+    isRequire?: boolean | null
     Education_sector_id?: { id: number; year: number; semester: number } | null
 }
 
@@ -154,13 +155,19 @@ const AddSubjectModal: React.FC<AddSubjectModalProps> = ({
                         }))
                         .slice()
                         .sort((a, b) => {
+                            const aElective = a.isRequire === false
+                            const bElective = b.isRequire === false
+                            if (aElective !== bElective) return aElective ? 1 : -1
+                            if (aElective && bElective) return 0
                             const sa = a.Education_sector_id
                             const sb = b.Education_sector_id
                             if (!sa && !sb) return 0
                             if (!sa) return 1
                             if (!sb) return -1
                             if (sa.year !== sb.year) return sa.year - sb.year
-                            return sa.semester - sb.semester
+                            const semA = sa.semester === 0 ? Infinity : sa.semester
+                            const semB = sb.semester === 0 ? Infinity : sb.semester
+                            return semA - semB
                         })
                     const rawPage = getPage(yearId)
                     const rpp = getRowsPerPage(yearId)
@@ -246,10 +253,19 @@ const AddSubjectModal: React.FC<AddSubjectModalProps> = ({
                                             let lastKey: string | null = null
                                             visibleRows.forEach((s) => {
                                                 const sec = s.Education_sector_id
-                                                const key = sec ? `${sec.year}-${sec.semester}` : 'none'
+                                                const isElective = s.isRequire === false
+                                                const key = isElective ? 'elective' : (sec ? `${sec.year}-${sec.semester}` : 'none')
                                                 if (key !== lastKey) {
                                                     lastKey = key
-                                                    if (sec) {
+                                                    if (isElective) {
+                                                        elements.push(
+                                                            <TableRow key="sector-elective" sx={{ backgroundColor: 'action.hover' }}>
+                                                                <TableCell colSpan={3} sx={{ py: 0.5, px: 2 }}>
+                                                                    <Chip label="วิชาเลือก" size="small" color="secondary" variant="outlined" sx={{ fontWeight: 600, fontSize: '0.75rem' }} />
+                                                                </TableCell>
+                                                            </TableRow>
+                                                        )
+                                                    } else if (sec) {
                                                         const label = sec.semester === 0
                                                             ? `ปี ${sec.year} ภาคฤดูร้อน`
                                                             : `ปี ${sec.year} ภาคการเรียนที่ ${sec.semester}`
@@ -272,7 +288,11 @@ const AddSubjectModal: React.FC<AddSubjectModalProps> = ({
                                                             />
                                                         </TableCell>
                                                         <TableCell>{s.code ?? '-'}</TableCell>
-                                                        <TableCell>{s.name ?? '-'}</TableCell>
+                                                        <TableCell>
+                                                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                                                {s.name ?? '-'}
+                                                            </Box>
+                                                        </TableCell>
                                                     </TableRow>
                                                 )
                                             })
@@ -310,7 +330,7 @@ const AddSubjectModal: React.FC<AddSubjectModalProps> = ({
                                             setRowsPerPageByYear(prev => ({ ...prev, [yearId]: newRpp }))
                                             setPageByYear(prev => ({ ...prev, [yearId]: 0 }))
                                         }}
-                                        rowsPerPageOptions={[5, 10, 25, 50]}
+                                        rowsPerPageOptions={[10, 25, 50]}
                                         labelRowsPerPage="แสดงต่อหน้า"
                                         sx={{
                                             '& .MuiTablePagination-toolbar': {
